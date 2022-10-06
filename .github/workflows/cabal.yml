@@ -44,3 +44,7 @@ jobs:
 
       - name: Build
         run: cabal build all
+
+defaults:
+  run:
+    working-directory: paper/code_examples
