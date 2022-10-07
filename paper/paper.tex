@@ -134,8 +134,8 @@
 %% The "title" command has an optional parameter,
 %% allowing the author to define a "short title" to be used in page headers.
 \title{LayeredTypes}
-
-%\title[LayeredTypes]{Layered Types -- An approach to arbitrarily combine LiquidTypes in a structured Manner}
+%TODO: Proper Title
+%\title[LayeredTypes]{Layered Types -- A structured approach to arbitrarily combine Liquid Types}
 
 %%
 %% The "author" command and its associated commands are used to define
@@ -147,12 +147,12 @@
 \email{l.abelt@luabelt.de}
 \orcid{1234-5678-9012}
 \affiliation{%
-  \institution{Saarland University}
+  \institution{LASIGE}
   \streetaddress{XXX}
-  \city{Saarbrücken}
-  \state{Saarland}
-  \country{Germany}
-  \postcode{66113}
+  \city{Lisbon}
+  \state{}
+  \country{Portugal}
+  \postcode{}
 }
 
 %%
@@ -166,7 +166,7 @@
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-	\todo[inline]{Write useful abstract}
+	\todo[inline]{TODO: Abstract}
 \end{abstract}
 
 %%
@@ -214,6 +214,7 @@
 \begin{teaserfigure}
   \includegraphics[width=\textwidth]{layered-shots.jpg}
   \label{fig:teaser}
+  \caption{Layers in Liquids}
 \end{teaserfigure}
 
 \received{20 February 2007}
@@ -227,18 +228,19 @@
 
 \section{Introduction}
 \subsection{Context}
-Using Refinement Types allows us to define contracts for function types that define pre-conditions on the function arguments and post-conditions on it's return values. These contracts can then be checked statically at compile time. One implementation of this is LiquidHaskell. When combining function calls, it can be verified that the post-condition of the inner function will also fulfill all pre-conditions of the outher function. Listing \ref{lst:liquidhaskell} shows an example of this.
+Modern program languages such as C++, Haskell, Rust or Java use type systems to ensure certain promises about the correct behavior of an implementation. In essence, the type system allows the programer to specify what inputs to accept for a program or function and what outputs it will produce. While these guarantees already prevent a multitude of runtime errors, they alone cannot prevent e.g. divisions by yero or out of range accesses in arrays.
 
-\lstinputlisting[caption={Contracts in LiquidHaskell}, label={lst:liquidhaskell}]{BasicLT.hs}
+One approach to bridge this gap is the introduction of \textit{Refinement Types}, also referred to as \textit{Liquid Types}. These allow us to annotate the traditional type system with additional logical predicates in order to ensure semantic properties, which can be checked statically at compile time. Using these techniques also allows us to define pre- and post-conditions on functions' arguments and return values. By properly defining these contracts a developer can clearly communicate and moreover enforce how other developers' code is allowed to interface with their implementations. Examples for constraints might include any of the following:
 
-Using these contracts, the programmer can clearly define the expectations and assurances that are made to the functions they write. Ensuring their fulfillment before code execution can have a great impact on a programs correctness and stability.
+\begin{itemize}
+	\item Ensuring values are in certain ranges
+	\item Ensuring that a list is non-empty
+	\item Ensuring that data structures certain to specific semantic properties e.g. that they are sorted
+\end{itemize}
+
+All in all, refinement types are valuable building blocks to creating reliable software systems. Using them can minimize the risk of any unhandled run-time errors occuring which might lead to undesired or even undefined behavior.
 
 \subsection{Motivation}
-One challenge current implementations of LiquidTypes face is that is is not always possible to trivially combine different constraints. Assume that in LiquidHaskell we have two refinement types for non-empty and ordered lists respectively. Freely combining these two types is not possible, so we rather have to create a new, separate, refinement type for this as shown in Listing \ref{lst:combined_refs}. 
-
-\lstinputlisting[caption={Combining Refinement Types},label={lst:combined_refs}]{CombinedLT.hs}
-
-As we have to combine the two constraints into one refinement type they are also always checked together. While this seems like a non-issue for simple functions as the ones presented so far, this may hinder the programmers ability to identify which pre-conditions are not ensured when writing functions that interface with already existing code. Assume that some developer writes a function whose result he wants to pass to the \texttt{maxVal} function defined in Listing \ref{lst:combined_refs}.
 
 \subsection{Problem Definition}
 \subsection{Impact}
