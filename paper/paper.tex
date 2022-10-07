@@ -229,14 +229,14 @@
 \subsection{Context}
 Using Refinement Types allows us to define contracts for function types that define pre-conditions on the function arguments and post-conditions on it's return values. These contracts can then be checked statically at compile time. One implementation of this is LiquidHaskell. When combining function calls, it can be verified that the post-condition of the inner function will also fulfill all pre-conditions of the outher function. Listing \ref{lst:liquidhaskell} shows an example of this.
 
-\lstinputlisting[language=Haskell,caption={Contracts in LiquidHaskell}, label={lst:liquidhaskell}]{BasicLT.hs}
+\lstinputlisting[caption={Contracts in LiquidHaskell}, label={lst:liquidhaskell}]{BasicLT.hs}
 
 Using these contracts, the programmer can clearly define the expectations and assurances that are made to the functions they write. Ensuring their fulfillment before code execution can have a great impact on a programs correctness and stability.
 
 \subsection{Motivation}
 One challenge current implementations of LiquidTypes face is that is is not always possible to trivially combine different constraints. Assume that in LiquidHaskell we have two refinement types for non-empty and ordered lists respectively. Freely combining these two types is not possible, so we rather have to create a new, separate, refinement type for this as shown in Listing \ref{lst:combined_refs}. 
 
-\lstinputlisting[language=Haskell,caption={Combining Refinement Types},label={lst:combined_refs}]{CombinedLT.hs}
+\lstinputlisting[caption={Combining Refinement Types},label={lst:combined_refs}]{CombinedLT.hs}
 
 As we have to combine the two constraints into one refinement type they are also always checked together. While this seems like a non-issue for simple functions as the ones presented so far, this may hinder the programmers ability to identify which pre-conditions are not ensured when writing functions that interface with already existing code. Assume that some developer writes a function whose result he wants to pass to the \texttt{maxVal} function defined in Listing \ref{lst:combined_refs}.
 
