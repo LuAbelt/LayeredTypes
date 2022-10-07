@@ -2,6 +2,8 @@ name: cabal
 
 on:
   push:
+    paths:
+      - 'paper/code_examples/**'
   pull_request:
 
 jobs:
