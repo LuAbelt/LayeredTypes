@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'paper/**'
+      - '.github/workflows/latex.yml'
 jobs:
   build_latex:
     runs-on: ubuntu-latest
@@ -18,4 +19,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: PDF
-          path: paper.pdf
+          path: 'paper/paper.pdf'

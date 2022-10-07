@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'paper/code_examples/**'
+      - '.github/workflows/cabal.yml'
+
   pull_request:
 
 jobs:
