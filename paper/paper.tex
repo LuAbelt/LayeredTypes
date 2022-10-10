@@ -242,6 +242,16 @@ All in all, refinement types are valuable building blocks to creating reliable s
 
 \subsection{Motivation}
 
+While Refinement Types already vastly imrpove traditional type systems, current implementations still expose some drawbacks in their practical usage. One of these challenges stems from the fact that during the static analysis, each refinement is treated as a single monolithic requirement that needs to be fulfilled. However in reality, a refinement might combine different properties of a type that may benefit from being treated individually.
+
+One example for such a refinement in LiquidHaskell is shown in \ref{lst:combined_lt}. There, we define a function that extracts the maximum value of a (descendingly) ordered, non-empty list. In this example, this operation is equivalent to simply extracting the \texttt{head} of a list. While we only define one refinement, it actually operates on two different properties of a list. First, it imposes a restriction on it's \texttt{size} by requiring it to be non-empty, while the second restriction imposes an order on the list elements.
+
+\lstinputlisting[firstline=6,caption={Example for a function with a combined Refinement Type in LiquidHaskell},label={lst:combined_lt}]{CombinedLT.hs}
+
+While the refinement concerns two different aspects of the list that are independent from each other, current static analysis implementations of Liquid Types will treat it only as a single combined requirement to be fulfilled. However especially developers could benefit from a system that treats them independently: When writing code that interfaces with already existing codes such a separated approach may give a developer more fine-grained information on which requirements they still need to fulfill in their implementation.
+
+Effectively one could treat such different requirements as separate \textit{Layers} that can be verified independently. Additionally with a proper implementation using such layers may also result in an implementation benefit, that different Layers can be defined individually and combined arbitrarily, as opposed to the example in Listing \ref{lst:combined_lt} where the combination of the two traits had to be explicitly defined as an refinement on it's own.
+
 \subsection{Problem Definition}
 \subsection{Impact}
 \subsection{Approach}

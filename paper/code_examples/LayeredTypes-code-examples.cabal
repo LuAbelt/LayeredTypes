@@ -17,7 +17,7 @@ library Examples
       Examples.BasicLT,
       Examples.CombinedLT
   hs-source-dirs:
-      src
+      lib
   build-depends:
       liquid-ghc-prim,
       liquid-base,
@@ -30,7 +30,7 @@ library Examples
 executable main
   main-is: Main.hs
   hs-source-dirs:
-      src
+      lib
   build-depends:
       liquid-ghc-prim,
       liquid-base,
