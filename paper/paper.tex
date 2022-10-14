@@ -233,7 +233,7 @@ Modern program languages such as C++, Haskell, Rust or Java use type systems to 
 One approach to bridge this gap is the introduction of \textit{Refinement Types}, also referred to as \textit{Liquid Types}. These allow us to annotate the traditional type system with additional logical predicates in order to ensure semantic properties, which can be checked statically at compile time. Using these techniques also allows us to define pre- and post-conditions on functions' arguments and return values. By properly defining these contracts a developer can clearly communicate and moreover enforce how other developers' code is allowed to interface with their implementations. Examples for constraints might include any of the following:
 
 \begin{itemize}
-	\item Ensuring values are in certain ranges
+	\item Ensuring values are in certain bounds
 	\item Ensuring that a list is non-empty
 	\item Ensuring that data structures certain to specific semantic properties e.g. that they are sorted
 \end{itemize}
