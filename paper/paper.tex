@@ -252,7 +252,55 @@ While the refinement concerns two different aspects of the list that are indepen
 
 Effectively one could treat such different requirements as separate \textit{Layers} that can be verified independently. Additionally with a proper implementation using such layers may also result in an implementation benefit, that different Layers can be defined individually and combined arbitrarily, as opposed to the example in Listing \ref{lst:combined_lt} where the combination of the two traits had to be explicitly defined as an refinement on it's own.
 
+One other possible usage of such an iterative approach is that it could allow to more flexibly add different static analysis approaches on top of each other. For example \ref{handley2020} have shown how to use liquid types in Haskell to statically perform cost analysis of different resources such as memory consumption or computational complexity. In their approach they showed that liquid types can be used to reason about their upper and lower bounds. However, in their work they only analysed one resource at a time. However, using a layered approach would allow to easily combine these different resource analyses to eg. track and reason about both memory usage and computational complexity.
+
 \subsection{Problem Definition}
+
+Current Liquid Type implementations limit us to only defining one liquid type for variables, arguments or return types. This forces us to combine all properties we want to statically check and verify into one big predicate. Using such an approach has the drawback that all properties are checked simultaneously which might make it difficult for a developer to identify due to which property a type error occurs. Additionally previously declared liquid types may not be reused when wanting to refine them further.
+
+We therefore propose an implementation of \textit{Layered Liquid\todo{Just Layered or Layered Liquid?} Types}, that allows to define types as a conjunction of previously defined Liquid Types. These types are then checked iteratively to ensure compability between functions and arguments.
+
+Assume we have a function \texttt{f} that takes as input a single liquid type $T^{in}$ refined by the predicates $p^{in}_1,\cdots,p^{in}_n$ and result type \texttt{out} and a variable \texttt{arg} of liquid type $T^{arg}$ refined by the predicates $p^{arg}_1,\cdots,p^{arg}_m$:
+
+\begin{lstlisting}[mathescape=true]
+	-- Liquid Type Definitions
+	{-@ type $T^{in}$ t = { t | $p^{in}_1 \wedge ... \wedge p^{in}_n$  } @-}
+	{-@ type $T^{arg}$ t = { t | $p^{arg}_1 \wedge ... \wedge p^{arg}_m$ } @-}
+
+	f : $T^{in}$ -> out 
+	arg : $T^{arg}$
+\end{lstlisting}
+
+When now calling \texttt{f} with \texttt{arg} as an argument, current implementations of liquid types will check for compability of the arguments in a manner similar to:
+
+$$ \left( \bigwedge^{m}_{i=1} p^{arg}_i \right) \implies \left( \bigwedge^{n}_{j=1} p^{in}_j \right) $$
+
+In our layered approach we rather propose that we can define separate layered types for each predicate and easily use their conjunction as the specific refined type for arguments and values:
+
+\begin{lstlisting}[mathescape=true]
+	-- Liquid Type Definitions for inputs to f
+	{-@ type $T^{in}_1$ t = { t | $p^{in}_1$ } @-}
+	{-@ type ... @-}
+	{-@ type $T^{in}_n$ t = { t | $p^{in}_n$ } @-}
+
+	-- Liquid Type Definitions for arg
+	{-@ type $T^{arg}_1$ t = { t | $p^{arg}_1$ } @-}
+	{-@ type ...  @-}
+	{-@ type $T^{arg}_m$ t = { t | $p^{arg}_m$ } @-}
+
+	f : {$T^{in}_1 \wedge ... \wedge T^{in}_n$} -> out 
+	arg : {$T^{arg}_1 \wedge ... \wedge T^{arg}_m$}
+\end{lstlisting}
+
+
+In this layered approach predicates are not checked simultaneously but rather in an iterative way, which could intuitively rather be expressed as the (which is semantically equivalent to the version above):
+
+$$ \bigwedge^{n}_{j=1} \left( \bigwedge^{m}_{i=1} p^{arg}_i \implies  p^{in}_j \right) $$
+
+Using this, we can specifically identify for which predicate the implications fail, giving the user a more accurate description of why their program may contain a type error.
+
+While on first glance this approach could be described as an approach to \textit{Gradual Verification}, we will explicitly refer to our approach as \textit{Layered} to distinguish it from \textit{Gradual Verification} techniques. While the latter deal with the gradient between incomplete and complete information (in that case on types), our approach is rather concerned not with what information is available on the typing but rather how it is processed. While gradual approaches might still type-check with incomplete typing information our approach would fail to typecheck in such a scenario as it still requires complete information. 
+
 \subsection{Impact}
 \subsection{Approach}
 \subsection{Contributions}
