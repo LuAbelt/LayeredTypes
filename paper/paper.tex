@@ -271,6 +271,7 @@ Assume we have a function \texttt{f} that takes as input a single liquid type $T
 	arg : $T^{arg}$
 \end{lstlisting}
 
+
 When now calling \texttt{f} with \texttt{arg} as an argument, current implementations of liquid types will check for compability of the arguments in a manner similar to:
 
 $$ \left( \bigwedge^{m}_{i=1} p^{arg}_i \right) \implies \left( \bigwedge^{n}_{j=1} p^{in}_j \right) $$
@@ -297,19 +298,46 @@ In this layered approach predicates are not checked simultaneously but rather in
 
 $$ \bigwedge^{n}_{j=1} \left( \bigwedge^{m}_{i=1} p^{arg}_i \implies  p^{in}_j \right) $$
 
-Using this, we can specifically identify for which predicate the implications fail, giving the user a more accurate description of why their program may contain a type error.
-
 While on first glance this approach could be described as an approach to \textit{Gradual Verification}, we will explicitly refer to our approach as \textit{Layered} to distinguish it from \textit{Gradual Verification} techniques. While the latter deal with the gradient between incomplete and complete information (in that case on types), our approach is rather concerned not with what information is available on the typing but rather how it is processed. While gradual approaches might still type-check with incomplete typing information our approach would fail to typecheck in such a scenario as it still requires complete information. 
 
 \subsection{Impact}
+
+We expect our approach to have the following impacts on Liquid Types in practice:
+
+\paragraph{Improved Error Messages}
+
+One current challenge when using liquid types is that all predicates for a type are checked simultaneously. This can make it difficult to identify which predicate caused a type liquid error. By separating the predicates into separate \textit{Layers} and verifying them individually, it is possible to precisely identify the predicate causing the type error. We expect this to help developers to more easily identify and fix these type errors in their code.
+
+\paragraph{Improved Usability and Reusability}
+
+In current Liquid Type implementations, types that require multiple predicates are defined as a single type. This may make it difficult for a developer to directly identify which properties a specific liquid type ensures. By separating different properties into a more fine-grained layered approach, this may make it easier to identify these properties. Additionally, by separating the predicates into different layers, it is possible to reuse previously defined liquid types in a more flexible way. For example, if a developer wants to refine a previously defined liquid type, they can now do so by adding a new layer to it, instead of having to redefine the entire type.
+
+\paragraph{Improved Composability}
+
+In addition to the improved reusability of our approach, we also expect it to improve the composability of different liquid types. With our suggested approach, new refinements can simply be created by composing already existing layers. This vastly increases modularity of the liquid type approach. It also may allow to re-use layers that have already been defined by other developers for ones own implementation.
+
 \subsection{Approach}
+We will start by giving a brief overview of the general principles of refinement types and liquid types in general in section \ref{sec:background}. Additionally, we will discuss the current state of the art in liquid types and gradual verification in section \ref{sec:related}. 
+
+In section \ref{sec:implementation} we will first give a more detailed description of our approach and define a simple functional language that we will use for further demonstration. We will then implement a prototype type checker for our layered approach. Using this simple prototype we will showcase how our approach can be used on various simple examples.
+
+In section \ref{sec:evaluation} we will discuss the limitations of our approach and possible extensions. Additionally, we will evaluate how our approach compares to using a pure, non-layered, verification approach.
+
+Test
+
 \subsection{Contributions}
-\section{Related Work}
 \section{Background}
+\label{sec:background}
+\section{Related Work}
+\label{sec:related}
 \section{Implementation}
+\label{sec:implementation}
 \section{Evaluation}
+\label{sec:evaluation}
 \section{Conclusion}
+\label{sec:conclusion}
 \section{Acknowledgments}
+\label{sec:acknowledgments}
 
 \end{document}
 \endinput
