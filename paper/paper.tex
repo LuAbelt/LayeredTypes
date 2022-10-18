@@ -332,6 +332,138 @@ Test
 \label{sec:related}
 \section{Implementation}
 \label{sec:implementation}
+
+In this section we will describe our implementation of a layered typing approach in detail. We will start by describing the simple functional language we will use for our examples. We will then describe how our layered type checker is implemented. Finally, we will showcase how our approach can be used on various simple examples.
+
+\subsection{Language}
+\label{ssec:language}
+
+To demonstrate our layered approach we implemented a simple functional language. The syntax of said language is described in \ref{fig:lang}. The language is similar to most simple functional languages and generally follows the reduction semantics of a standard Hindley-Milner type system. The only data types available in the language are the \texttt{Int} and the \texttt{Bool} type. However, the language does not strictly require the programmer to explicitly specify the type of a variable.
+
+\begin{figure}[ht!]
+\begin{align*}
+	id \in \texttt{Ident}\ 	&::=\ [a...zA...Z]+ \\
+	v \in \texttt{Var}\ 	&::=\ id \\
+	f \in \texttt{Fun}\ 	&::=\ id_1\ id_2\ \{\ s\ \}\\
+	e \in \texttt{Expr}\ 	&::=\ v\ |\ (\ e\ \circledplus\ e\ )\ |\ (e\ \circleddot\ e)\ |\ c \\
+	c \in \texttt{Const}\ 	&::=\ \texttt{True}\ |\ \texttt{False}\ |\ \mathbb{Z} \\
+	s \in \texttt{Stmt}\ 	&::=\ v\ :=\ e\ |\ f(v)\ |\ \texttt{if}\ v\ \texttt{then}\ s\ \texttt{else}\ s\ |\ \texttt{let}\ v\ :=\ e\ \texttt{in}\ s\ |\ l \\
+	l \in \texttt{Layer}\ 	&::=\ id_1::id_2::\texttt{String} \\
+	\circledplus\ 		&::=\ \texttt{+}\ |\ \texttt{-} \\
+	\circleddot\ 		&::=\ \texttt{!=}\ |\ \texttt{==}\ |\ \texttt{<} \ |\ \texttt{>} \ |\ \texttt{<=} \ |\ \texttt{>=} \\
+\end{align*}
+\caption{Syntax of the simple functional language}
+\label{fig:lang}
+\end{figure}
+
+Additionally to standard operations, the syntax of the language supports creating layers that can be applied onto each identifier. The syntax of a layer consists of the following:
+\begin{itemize}
+	\item $id_1$ -- The name of the identifier to be refined
+	\item $id_2$ -- The name of the layer
+	\item An arbitrary \textit{String} that represents the refinement. Note that the syntax does not restrict the format of this string, as this information will be parsed later by the corresponding type checking layer.
+\end{itemize}
+
+These layers can then be used to refine an identifier. In a very basic and minimal approach these layers can be used to annotate types to variables and identifiers. Additionally, one might add additional layers to a variable to ensure more properties. Each layer will be checked individually and independently. A more detailled approach of the architecture behind our layered approach will be described in section \ref{ssec:architecture}.
+
+An example of a program written in our language can be seen in \ref{lst:fac_example}. The program defines a factorial function that is refined in two layers. The first layer \textit{base} is a simple type layer that defines that \texttt{fac} takes an \texttt{Int} and returns an \texttt{Int}. The second layer \textit{liquid} is a refinement layer that refines that the input should be greater or equal to zero and that the output will be greater than zero.
+
+\begin{lstlisting}[caption={Example of a factorial function in our simple language}, label={lst:fac_example}]
+fac::base:: Int -> Int
+fac::liquid:: {v:Int | v >= 0} -> {v:Int | v > 0}
+fac x { 
+let cond := (x == 0) in
+	if cond then 
+		1 
+	else 
+		x * fac (x - 1) 
+}
+\end{lstlisting}
+
+\begin{table}[h!]
+  \begin{center}
+    \begin{tabular}{cl} 
+      \\
+      \(\frac
+         {x \ : \ \sigma \ \in \ \Gamma}
+        {\Gamma \  \vdash \ x \ : \ \sigma} \) 
+      &  [\texttt{Var}]  \\
+      \\
+      
+      \\
+      \(\frac
+        {\Gamma \  \vdash \ {e}_{0} \ : \ \tau \rightarrow {\tau}' \;\;\;\; \Gamma \  \vdash \  {e}_{1} \ : \ \tau}
+        {\Gamma \vdash {e}_{0} \; {e}_{1} \ : \ {\tau}'} \)
+      & [\texttt{App}] \\
+      \\
+      
+      \\
+      \(\frac
+        {\Gamma , \ x \ : \ \tau \ \vdash \ e \ : \ {\tau}'}
+        {\Gamma \ \vdash \ \lambda x \ . \ e \ : \ \tau \rightarrow{\tau}'}\)
+      & [\texttt{Abs}] \\
+      \\
+      
+      \\
+      \(\frac
+        {\Gamma \ \vdash \ {e}_{0} \ : \ \sigma \;\;\;\; 
+         \Gamma, \ x \ : \ \sigma \ \vdash \ {e}_{1} \ : \ \tau}
+        {\Gamma \ \vdash \ \texttt{let} \ x \ = \ {e}_{0} \ \texttt{in} \ {e}_{1} \ : \ \tau}\)
+      & [\texttt{Let}] \\ 
+      \\
+      
+      \\
+      \(\frac
+        {
+            \newline
+            \Gamma \ \vdash \ e \ : \ {\sigma}' \;\;\;\;
+            {\sigma}' \ \sqsubseteq  \ \sigma
+        }
+        {
+            \Gamma \ \vdash \ e \ : \ \sigma
+        }\)
+      & [\texttt{Inst}] \\
+      \\
+      
+      \\
+      \(
+       \frac
+       {
+        \Gamma \ \vdash \ e \ : \ \sigma \;\;\;\;
+        \alpha \ \notin \text{free}(\Gamma)
+       }
+       {
+        \Gamma \ \vdash \ e \ : \ \forall \ \alpha \ . \ \sigma
+       }
+      \)
+      & [\texttt{Gen}] \\
+      \\
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\subsection{Language Implementation Architecture}
+\label{ssec:architecture}
+
+The implementation of our language will be done in the \texttt{Python} programming language. Roughly speaking, the implementation will consist of three parts, which we will describe throughout this section:
+
+\begin{enumerate}
+	\item A parser that parses the input program and creates an abstract syntax tree (AST) of the program (\ref{sssec:parser}).
+	\item A layered type checker that checks the defined type layers for the tree incrementally (\ref{sssec:layered_type_checker}).
+	\item A code generator that generates the corresponding code for the input program (\ref{sssec:code_generator}).
+\end{enumerate}
+
+\subsubsection{Parser}
+\label{sssec:parser}
+
+\subsubsection{Layered Type Checker}
+\label{sssec:layered_type_checker}
+
+\subsubsection{Code Generator}
+\label{sssec:code_generator}
+
+\subsection{Examples}
+\label{ssec:examples}
+
 \section{Evaluation}
 \label{sec:evaluation}
 \section{Conclusion}
