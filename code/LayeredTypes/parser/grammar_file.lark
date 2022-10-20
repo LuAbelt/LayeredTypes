@@ -1,0 +1,33 @@
+start: _stmt*
+
+_ident: WORD
+
+_stmt:       _expr
+            | layer_def
+            | assign
+            | if_stmt
+            | let_stmt
+            | fun_def
+assign:     _ident ":=" _expr
+if_stmt:    "if" _ident "then" _stmt "else" _stmt
+let_stmt:   "let" _ident ":=" _expr "in" _stmt
+const:      "True" -> true
+            | "False" -> false
+            | SIGNED_NUMBER -> num
+_expr:       _ident
+            | const
+            | bin_op
+            | fun_call
+            | "(" _expr ")"              //Convenience for readability
+fun_def:    _ident _ident "{" _stmt "}"
+fun_call:   _ident _expr
+layer_def: _ident "::" _ident "::"  /.+/  -> layer
+bin_op:     _expr OP _expr
+OP: "+" | "-" | "*" | "==" | "!=" | "<" | ">" | "<=" | ">="
+
+%import common.WORD
+%import common.WS
+%import common.SIGNED_NUMBER
+%import common.SQL_COMMENT
+%ignore WS
+%ignore SQL_COMMENT
