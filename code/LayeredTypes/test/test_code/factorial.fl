@@ -1,6 +1,8 @@
 fac::base::Int -> Int
 fac::liquid::{v:Int | v >= 0} -> {v:Int | v > 0}
 
+y := 20
+
 fac x {
 let cond := (x == 0) in
         if cond then
@@ -8,3 +10,7 @@ let cond := (x == 0) in
         else
                 x * fac (x - 1)
 }
+
+print(fac(4))
+
+test(42)

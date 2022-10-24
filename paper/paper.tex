@@ -345,9 +345,9 @@ To demonstrate our layered approach we implemented a simple functional language.
 	id \in \texttt{Ident}\ 	&::=\ [a...zA...Z]+ \\
 	v \in \texttt{Var}\ 	&::=\ id \\
 	f \in \texttt{Fun}\ 	&::=\ id_1\ id_2\ \{\ s\ \}\\
-	e \in \texttt{Expr}\ 	&::=\ v\ |\ (\ e\ \circledplus\ e\ )\ |\ (e\ \circleddot\ e)\ |\ c \\
+	e \in \texttt{Expr}\ 	&::=\ v\ |\ c\ |\ (\ e\ \circledplus\ e\ )\ |\ (e\ \circleddot\ e)\ |\ f(e) \\
 	c \in \texttt{Const}\ 	&::=\ \texttt{True}\ |\ \texttt{False}\ |\ \mathbb{Z} \\
-	s \in \texttt{Stmt}\ 	&::=\ v\ :=\ e\ |\ f(v)\ |\ \texttt{if}\ v\ \texttt{then}\ s\ \texttt{else}\ s\ |\ \texttt{let}\ v\ :=\ e\ \texttt{in}\ s\ |\ l \\
+	s \in \texttt{Stmt}\ 	&::=\ v\ :=\ e\ |\ \texttt{if}\ v\ \texttt{then}\ s\ \texttt{else}\ s\ |\ \texttt{let}\ v\ :=\ e\ \texttt{in}\ s\ |\ l \\
 	l \in \texttt{Layer}\ 	&::=\ id_1::id_2::\texttt{String} \\
 	\circledplus\ 		&::=\ \texttt{+}\ |\ \texttt{-} \\
 	\circleddot\ 		&::=\ \texttt{!=}\ |\ \texttt{==}\ |\ \texttt{<} \ |\ \texttt{>} \ |\ \texttt{<=} \ |\ \texttt{>=} \\
@@ -363,7 +363,7 @@ Additionally to standard operations, the syntax of the language supports creatin
 	\item An arbitrary \textit{String} that represents the refinement. Note that the syntax does not restrict the format of this string, as this information will be parsed later by the corresponding type checking layer.
 \end{itemize}
 
-These layers can then be used to refine an identifier. In a very basic and minimal approach these layers can be used to annotate types to variables and identifiers. Additionally, one might add additional layers to a variable to ensure more properties. Each layer will be checked individually and independently. A more detailled approach of the architecture behind our layered approach will be described in section \ref{ssec:architecture}.
+These layers can then be used to refine an identifier. In a very basic and minimal approach these layers can be used to annotate types to variables and functions. Additionally, one might add additional layers to a variable to ensure more properties. Each layer will be checked individually and independently. A more detailled approach of the architecture behind our layered approach will be described in section \ref{ssec:architecture}.
 
 An example of a program written in our language can be seen in \ref{lst:fac_example}. The program defines a factorial function that is refined in two layers. The first layer \textit{base} is a simple type layer that defines that \texttt{fac} takes an \texttt{Int} and returns an \texttt{Int}. The second layer \textit{liquid} is a refinement layer that refines that the input should be greater or equal to zero and that the output will be greater than zero.
 
@@ -379,87 +379,18 @@ let cond := (x == 0) in
 }
 \end{lstlisting}
 
-\begin{table}[h!]
-  \begin{center}
-    \begin{tabular}{cl} 
-      \\
-      \(\frac
-         {x \ : \ \sigma \ \in \ \Gamma}
-        {\Gamma \  \vdash \ x \ : \ \sigma} \) 
-      &  [\texttt{Var}]  \\
-      \\
-      
-      \\
-      \(\frac
-        {\Gamma \  \vdash \ {e}_{0} \ : \ \tau \rightarrow {\tau}' \;\;\;\; \Gamma \  \vdash \  {e}_{1} \ : \ \tau}
-        {\Gamma \vdash {e}_{0} \; {e}_{1} \ : \ {\tau}'} \)
-      & [\texttt{App}] \\
-      \\
-      
-      \\
-      \(\frac
-        {\Gamma , \ x \ : \ \tau \ \vdash \ e \ : \ {\tau}'}
-        {\Gamma \ \vdash \ \lambda x \ . \ e \ : \ \tau \rightarrow{\tau}'}\)
-      & [\texttt{Abs}] \\
-      \\
-      
-      \\
-      \(\frac
-        {\Gamma \ \vdash \ {e}_{0} \ : \ \sigma \;\;\;\; 
-         \Gamma, \ x \ : \ \sigma \ \vdash \ {e}_{1} \ : \ \tau}
-        {\Gamma \ \vdash \ \texttt{let} \ x \ = \ {e}_{0} \ \texttt{in} \ {e}_{1} \ : \ \tau}\)
-      & [\texttt{Let}] \\ 
-      \\
-      
-      \\
-      \(\frac
-        {
-            \newline
-            \Gamma \ \vdash \ e \ : \ {\sigma}' \;\;\;\;
-            {\sigma}' \ \sqsubseteq  \ \sigma
-        }
-        {
-            \Gamma \ \vdash \ e \ : \ \sigma
-        }\)
-      & [\texttt{Inst}] \\
-      \\
-      
-      \\
-      \(
-       \frac
-       {
-        \Gamma \ \vdash \ e \ : \ \sigma \;\;\;\;
-        \alpha \ \notin \text{free}(\Gamma)
-       }
-       {
-        \Gamma \ \vdash \ e \ : \ \forall \ \alpha \ . \ \sigma
-       }
-      \)
-      & [\texttt{Gen}] \\
-      \\
-    \end{tabular}
-  \end{center}
-\end{table}
-
 \subsection{Language Implementation Architecture}
 \label{ssec:architecture}
 
 The implementation of our language will be done in the \texttt{Python} programming language. Roughly speaking, the implementation will consist of three parts, which we will describe throughout this section:
 
 \begin{enumerate}
-	\item A parser that parses the input program and creates an abstract syntax tree (AST) of the program (\ref{sssec:parser}).
-	\item A layered type checker that checks the defined type layers for the tree incrementally (\ref{sssec:layered_type_checker}).
-	\item A code generator that generates the corresponding code for the input program (\ref{sssec:code_generator}).
+	\item A parser that parses the input program and creates an abstract syntax tree (AST) of the program.
+	\item A layered type checker that checks the defined type layers for the tree incrementally.
+	\item A code generator that generates the corresponding code for the input program.
 \end{enumerate}
 
-\subsubsection{Parser}
-\label{sssec:parser}
 
-\subsubsection{Layered Type Checker}
-\label{sssec:layered_type_checker}
-
-\subsubsection{Code Generator}
-\label{sssec:code_generator}
 
 \subsection{Examples}
 \label{ssec:examples}
