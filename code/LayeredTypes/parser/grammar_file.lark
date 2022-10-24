@@ -9,6 +9,7 @@ _stmt:       _expr
             | let_stmt
             | fun_def
 assign:     ident ":=" _expr
+            | ident ":=" custom_expr
 if_stmt:    "if" ident "then" _stmt "else" _stmt
 let_stmt:   "let" ident ":=" _expr "in" _stmt
 const:      "True" -> true
@@ -19,6 +20,7 @@ _expr:       ident
             | bin_op
             | fun_call
             | "(" _expr ")"              //Convenience for readability
+custom_expr:    /.+/
 fun_def:    WORD WORD "{" _stmt "}"
 fun_call:   WORD _expr
 layer_def: ident "::" ident "::"  /.+/  -> layer

@@ -202,6 +202,9 @@ class SimpleInterpreter(lark.visitors.Interpreter):
 
         return self.variables[identifier]
 
+    def custom_expr(self, tree):
+        print("Custom expression: {}".format(tree.children[0].value))
+
 
 Parser = lark.Lark.open("grammar_file.lark", parser= "lalr", debug=True)
 
