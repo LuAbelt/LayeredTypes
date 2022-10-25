@@ -2,7 +2,6 @@
 import lark
 from pathlib import Path
 
-from layers.Layer import Layer
 from layers.LayerImplWrapper import LayerImplWrapper
 from compiler.transformers.CollectLayers import CollectLayers
 from compiler.Interpreters import SimpleInterpreter
@@ -37,6 +36,8 @@ class LayeredCompiler:
         ReducedTree = lv.transform(tree)
 
         layer_wrapper = LayerImplWrapper(lv.layers["base"])
+
+        return ReducedTree
         pass
 
     def __parse(self, input_file):
