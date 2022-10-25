@@ -1,65 +1,17 @@
 from importlib import import_module
 import lark
-
-class Layer:
-    def __init__(self,
-                 layer_ident : str):
-        self.name = layer_ident
-        self.refinements = dict()
-
-    def add_refinement(self,
-                       identifier,
-                       refinement_str):
-        if not identifier in self.refinements.keys():
-            self.refinements[identifier] = []
-        self.refinements[identifier].append(refinement_str)
-
-    def __str__(self):
-
-        res = "{}:\n".format(self.name)
-        for ident in self.refinements:
-            refinements = self.refinements[ident]
-            res += "\t{}\n".format(ident)
-
-            for refinement in refinements:
-                res += "\t\t{}\n".format(refinement)
-
-        return res
-
-class LayerImplWrapper:
-    def __init__(self,
-                 layer: Layer):
-        self.layer = layer
-        try:
-            self.module = import_module("layers.{}".format(layer.name))
-        except ModuleNotFoundError as e:
-            raise FileNotFoundError(f"No implementation file (tried to load file './layers/{layer.name}.py') found for layer '{layer.name}'")
-        self.depends_on = getattr(self.module, "depends_on")
-        self.typecheck = getattr(self.module, "typecheck")
-        self.parse_type = getattr(self.module, "parse_type")
-
-class CollectLayers(lark.Transformer):
-    def __init__(self):
-        super().__init__()
-        self.layers = dict()
-
-
-    def layer(self, tree):
-        ident = tree[0].children[0].value
-        layer_ident = tree[1].children[0].value
-        refinement = tree[2].value
-
-        if not layer_ident in self.layers.keys():
-            self.layers[layer_ident] = Layer(layer_ident)
-        print("Processing layer {} for identifier {} with rule '{}'".format(layer_ident, ident, refinement))
-        self.layers[layer_ident].add_refinement(ident,refinement)
-        return lark.Discard
+from pathlib import Path
 
 class SimpleInterpreter(lark.visitors.Interpreter):
     def __init__(self, implementation_file = "implementations"):
         # Variables and functions are stored in dictionaries for access by our interpreter
         self.variables = dict()
         self.functions = dict()
+
+        impl_path = Path(implementation_file)
+        if not impl_path.is_file():
+            raise FileNotFoundError(f"No implementation file (tried to load file '{implementation_file}') found")
+
         self.external_functions = import_module(implementation_file)
         super().__init__()
 
@@ -192,8 +144,13 @@ class SimpleInterpreter(lark.visitors.Interpreter):
             raise RuntimeError(f"Function '{fun_id}' already defined")
 
         self.functions[fun_id] = (arg_ident, fun_def)
-        pass
 
+    def fun_body(self, tree):
+        result = None
+        for child in tree.children:
+            result = self.visit(child)
+
+        return result
     def ident(self, tree):
         identifier = tree.children[0].value
 
@@ -203,18 +160,6 @@ class SimpleInterpreter(lark.visitors.Interpreter):
         return self.variables[identifier]
 
     def custom_expr(self, tree):
-        print("Custom expression: {}".format(tree.children[0].value))
+        expr_str = tree.children[0].value
+        print("Custom expression: {}".format(expr_str))
 
-
-Parser = lark.Lark.open("grammar_file.lark", parser= "lalr", debug=True)
-
-with open("../test/test_code/factorial.fl") as f:
-    Tree = Parser.parse(f.read())
-
-lv = CollectLayers()
-
-ReducedTree = lv.transform(Tree)
-
-layer_wrapper = LayerImplWrapper(lv.layers["base"])
-
-SimpleInterpreter().run(ReducedTree)

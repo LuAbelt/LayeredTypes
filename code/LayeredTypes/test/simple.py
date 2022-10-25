@@ -1,3 +1,3 @@
-from parser.parser import Parser
+from compiler.Compiler import Parser
 
 print(Parser.parse("myvar := 20"))
