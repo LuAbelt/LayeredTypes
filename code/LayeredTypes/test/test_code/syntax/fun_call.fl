@@ -1,0 +1,4 @@
+funCall(argument)
+funCall(42)
+funCall(True)
+funCall(False)

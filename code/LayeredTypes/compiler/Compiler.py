@@ -1,3 +1,4 @@
+import os.path
 
 import lark
 from pathlib import Path
@@ -20,10 +21,12 @@ class LayeredCompiler:
         if not self.layer_base_dir.is_dir():
             raise FileNotFoundError(f"Could not find layer base directory at {self.layer_base_dir}")
 
-        self.parser = lark.Lark.open("grammar_file.lark", parser= "lalr", debug=True)
+        # Build path for grammar file
+        grammar_file = os.path.dirname(os.path.realpath(__file__)) + "/grammar_file.lark"
+        self.parser = lark.Lark.open(grammar_file, parser= "lalr", debug=True)
 
     def typecheck(self, input_file):
-        tree = self.__parse(input_file)
+        tree = self.parse(input_file)
 
         self.__typecheck(tree)
 
@@ -33,21 +36,21 @@ class LayeredCompiler:
         # TODO: Implement proper typechecking
         lv = CollectLayers()
 
-        ReducedTree = lv.transform(tree)
+        reducedTree = lv.transform(tree)
 
-        layer_wrapper = LayerImplWrapper(lv.layers["base"])
+        # layer_wrapper = LayerImplWrapper(lv.layers["base"])
 
-        return ReducedTree
+        return reducedTree
         pass
 
-    def __parse(self, input_file):
+    def parse(self, input_file):
         with open(input_file) as f:
             tree = self.parser.parse(f.read())
 
         return tree
 
     def compile(self, program):
-        tree = self.__parse(program)
+        tree = self.parse(program)
 
         if not self.__typecheck(tree):
             raise RuntimeError("Typechecking failed")
@@ -58,8 +61,7 @@ class LayeredCompiler:
 
         interpreter = SimpleInterpreter(self.implementations_file)
 
-        interpreter.run(tree)
-        pass
+        return interpreter.run(tree)
 
 
 

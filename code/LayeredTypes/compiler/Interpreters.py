@@ -1,6 +1,7 @@
-from importlib import import_module
+import importlib
 import lark
 from pathlib import Path
+import sys
 
 class SimpleInterpreter(lark.visitors.Interpreter):
     def __init__(self, implementation_file = "implementations"):
@@ -12,7 +13,12 @@ class SimpleInterpreter(lark.visitors.Interpreter):
         if not impl_path.is_file():
             raise FileNotFoundError(f"No implementation file (tried to load file '{implementation_file}') found")
 
-        self.external_functions = import_module(implementation_file)
+        module_name = "implementations.test"
+        spec = importlib.util.spec_from_file_location(module_name, impl_path)
+        self.external_functions = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = self.external_functions
+        spec.loader.exec_module(self.external_functions)
+
         super().__init__()
 
     def run(self, tree):
@@ -20,7 +26,7 @@ class SimpleInterpreter(lark.visitors.Interpreter):
         self.variables = dict()
         self.functions = dict()
 
-        self.visit(tree)
+        return self.visit(tree)[-1]
     def num(self, tree):
         return int(tree.children[0])
 

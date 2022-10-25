@@ -1,7 +1,7 @@
 import importlib.util
 import sys
-from importlib import import_module
-import Layer
+
+from layers.Layer import Layer
 from pathlib import Path
 
 class LayerImplWrapper:
