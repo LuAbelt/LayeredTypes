@@ -13,7 +13,7 @@ class SimpleInterpreter(lark.visitors.Interpreter):
         if not impl_path.is_file():
             raise FileNotFoundError(f"No implementation file (tried to load file '{implementation_file}') found")
 
-        module_name = "implementations.test"
+        module_name = "implementations"
         spec = importlib.util.spec_from_file_location(module_name, impl_path)
         self.external_functions = importlib.util.module_from_spec(spec)
         sys.modules[module_name] = self.external_functions
