@@ -1,3 +1,12 @@
+name: Python Library UnitTests
+
+on:
+  push:
+    paths:
+      - 'code/LayeredTypes/**'
+      - '.github/workflows/python_unittests.yml'
+
+
 steps:
 - uses: actions/checkout@v3
 - name: Set up Python
