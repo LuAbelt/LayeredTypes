@@ -79,10 +79,29 @@ class TestParser(unittest.TestCase):
         self.assertEqual(tree.children[0].children[1].children[0], "42")
         self.assertEqual(tree.children[0].children[2].data, "ident")
         self.assertEqual(tree.children[0].children[2].children[0], "x")
-        pass
 
     def test_bin_op(self):
-        pass
+        tree = self.__parse_file("/test_code/syntax/bin_op.fl")
+
+        def check_bin_op(tree, op):
+            self.assertEqual(tree.data, "bin_op")
+            self.assertEqual(tree.children[0].data, "ident")
+            self.assertEqual(tree.children[0].children[0], "a")
+            self.assertEqual(tree.children[1], op)
+            self.assertEqual(tree.children[2].data, "ident")
+            self.assertEqual(tree.children[2].children[0], "b")
+
+        self.assertEqual(tree.data, "start")
+        check_bin_op(tree.children[0], "+")
+        check_bin_op(tree.children[1], "-")
+        check_bin_op(tree.children[2], "*")
+        check_bin_op(tree.children[3], ">")
+        check_bin_op(tree.children[4], "<")
+        check_bin_op(tree.children[5], ">=")
+        check_bin_op(tree.children[6], "<=")
+        check_bin_op(tree.children[7], "==")
+        check_bin_op(tree.children[8], "!=")
+
 
     def test_call(self):
         tree = self.__parse_file("/test_code/syntax/fun_call.fl")
