@@ -26,6 +26,7 @@ class SimpleInterpreter(lark.visitors.Interpreter):
         self.variables = dict()
         self.functions = dict()
 
+        # Return the value of the last expression in the program
         return self.visit(tree)[-1]
     def num(self, tree):
         return int(tree.children[0])
@@ -111,45 +112,50 @@ class SimpleInterpreter(lark.visitors.Interpreter):
 
     def fun_call(self, tree):
         fun_id = tree.children[0].value
-        fun_arg = self.visit(tree.children[1])
+
+        fun_args = [self.visit(child) for child in tree.children[1:-1]]
 
         if not fun_id in self.functions.keys():
             if getattr(self.external_functions, fun_id, None):
-                return getattr(self.external_functions, fun_id)(fun_arg)
+                return getattr(self.external_functions, fun_id)(*fun_args)
             raise RuntimeError(f"Function '{fun_id}' not defined")
 
         fun_def = self.functions[fun_id]
-        arg_ident = fun_def[0]
+        arg_identifiers = fun_def[0]
 
         # In order to allow recursive functions we might need to restore the old value of the argument
-        restore_val = False
-        old_val = None
-        if arg_ident in self.variables.keys():
-            old_val = self.variables[arg_ident]
-            restore_val = True
+        restore_vals = dict()
+
+        for arg_ident,fun_arg in zip(arg_identifiers, fun_args):
+            if arg_ident in self.variables.keys():
+                restore_vals[arg_ident] = self.variables[arg_ident]
+
+            self.variables[arg_ident] = fun_arg
 
         # Add the function argument to the variable context
-        self.variables[arg_ident] = fun_arg
 
         result = self.visit(fun_def[1])
 
-        # Remove the function argument from the variable context
-        self.variables.pop(arg_ident)
+        # Remove the function arguments from the variable context
+        for arg_ident in arg_identifiers:
+            self.variables.pop(arg_ident)
 
-        if restore_val:
-            self.variables[arg_ident] = old_val
+            # Restore the old values of the arguments if necessary
+            if arg_ident in restore_vals.keys():
+                self.variables[arg_ident] = restore_vals[arg_ident]
 
         return result
     def fun_def(self, tree):
-
         fun_id = tree.children[0].value
-        arg_ident = tree.children[1].value
-        fun_def = tree.children[2]
+
+        arg_identifiers = [child.value for child in tree.children[1:-1]]
+
+        fun_def = tree.children[-1]
 
         if fun_id in self.functions.keys():
             raise RuntimeError(f"Function '{fun_id}' already defined")
 
-        self.functions[fun_id] = (arg_ident, fun_def)
+        self.functions[fun_id] = (arg_identifiers, fun_def)
 
     def fun_body(self, tree):
         result = None

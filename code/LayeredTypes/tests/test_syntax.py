@@ -106,24 +106,26 @@ class TestParser(unittest.TestCase):
     def test_call(self):
         tree = self.__parse_file("/test_code/syntax/fun_call.fl")
 
+
+        def check_call(tree, function_identifier, arg_identifiers):
+            self.assertEqual(tree.data, "fun_call")
+            self.assertEqual(len(tree.children), len(arg_identifiers) + 1)
+            self.assertEqual(tree.children[0], function_identifier)
+
+            for i in range(len(arg_identifiers)):
+                self.assertEqual(tree.children[i+1].data, arg_identifiers[i][0])
+                if arg_identifiers[i][1] is not None:
+                    self.assertEqual(tree.children[i+1].children[0], arg_identifiers[i][1])
+
+
         self.assertEqual(tree.data, "start")
-        self.assertEqual(tree.children[0].data, "fun_call")
-        self.assertEqual(tree.children[0].children[0], "funCall")
-        self.assertEqual(tree.children[0].children[1].data, "ident")
-        self.assertEqual(tree.children[0].children[1].children[0], "argument")
-
-        self.assertEqual(tree.children[1].data, "fun_call")
-        self.assertEqual(tree.children[1].children[0], "funCall")
-        self.assertEqual(tree.children[1].children[1].data, "num")
-        self.assertEqual(tree.children[1].children[1].children[0], "42")
-
-        self.assertEqual(tree.children[2].data, "fun_call")
-        self.assertEqual(tree.children[2].children[0], "funCall")
-        self.assertEqual(tree.children[2].children[1].data, "true")
-
-        self.assertEqual(tree.children[3].data, "fun_call")
-        self.assertEqual(tree.children[3].children[0], "funCall")
-        self.assertEqual(tree.children[3].children[1].data, "false")
+        check_call(tree.children[0], "funCall", [("ident","argument")])
+        check_call(tree.children[1], "funCall", [("num","42")])
+        check_call(tree.children[2], "funCall", [("true",None)])
+        check_call(tree.children[3], "funCall", [("false",None)])
+        check_call(tree.children[4], "emptyCall", [])
+        check_call(tree.children[5], "twoArgs", [("ident","first"), ("ident","second")])
+        check_call(tree.children[6], "threeArgs", [("ident","first"), ("ident","second"), ("ident","third")])
 
     def test_func_def(self):
         tree = self.__parse_file("/test_code/syntax/fun_def.fl")

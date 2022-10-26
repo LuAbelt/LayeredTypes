@@ -21,9 +21,10 @@ _expr:       ident
             | fun_call
             | "(" _expr ")"              //Convenience for readability
 custom_expr:    /.+/
-fun_def:    WORD WORD "{" fun_body "}"
+fun_def:    WORD WORD* "{" fun_body "}"
 fun_body:   _stmt+
-fun_call:   WORD "(" _expr ")"
+fun_call:   WORD "(" _fun_args? ")"
+_fun_args:  _expr | _expr "," _fun_args
 layer_def: ident "::" ident "::"  /.+/  -> layer
 bin_op:     _expr OP _expr
 OP: "+" | "-" | "*" | "==" | "!=" | "<" | ">" | "<=" | ">="
