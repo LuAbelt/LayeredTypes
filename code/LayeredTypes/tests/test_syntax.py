@@ -52,15 +52,17 @@ class TestParser(unittest.TestCase):
         tree = parse_file("/test_code/syntax/if_stmt.fl")
 
         self.assertEqual(tree.data, "start")
+        self.assertEqual(len(tree.children), 3)
+
         self.assertEqual(tree.children[0].data, "if_stmt")
         self.assertEqual(tree.children[0].children[0].data, "ident")
         self.assertEqual(tree.children[0].children[0].children[0], "condition")
 
-        self.assertEqual(tree.children[0].children[1].data, "body")
+        self.assertEqual(tree.children[0].children[1].data, "block")
         self.assertEqual(len(tree.children[0].children[1].children), 1)
         self.assertEqual(tree.children[0].children[1].children[0].data, "true")
 
-        self.assertEqual(tree.children[0].children[2].data, "body")
+        self.assertEqual(tree.children[0].children[2].data, "block")
         self.assertEqual(len(tree.children[0].children[2].children), 1)
         self.assertEqual(tree.children[0].children[2].children[0].data, "false")
 
@@ -68,16 +70,38 @@ class TestParser(unittest.TestCase):
         tree = parse_file("/test_code/syntax/let_stmt.fl")
 
         self.assertEqual(tree.data, "start")
-        self.assertEqual(tree.children[0].data, "let_stmt")
-        self.assertEqual(tree.children[0].children[0].data, "ident")
-        self.assertEqual(tree.children[0].children[0].children[0], "x")
-        self.assertEqual(tree.children[0].children[1].data, "num")
-        self.assertEqual(tree.children[0].children[1].children[0], "42")
+        self.assertEqual(len(tree.children), 3)
 
-        self.assertEqual(tree.children[0].children[2].data, "body")
+        def check_let_stmt(tree, ident, value, body_length):
+            self.assertEqual(tree.data, "let_stmt")
+            self.assertEqual(tree.children[0].data, "ident")
+            self.assertEqual(tree.children[0].children[0], ident)
+            self.assertEqual(tree.children[1].data, value[0])
+            if value[1] is not None:
+                self.assertEqual(tree.children[1].children[0], value[1])
+
+            self.assertEqual(tree.children[2].data, "block")
+            self.assertEqual(len(tree.children[2].children), body_length)
+
+        # Check general let construct and body sizes
+        check_let_stmt(tree.children[0], "x", ("num", "42"), 1)
+        check_let_stmt(tree.children[1], "x", ("num", "42"), 1)
+        check_let_stmt(tree.children[2], "x", ("ident", "y"), 1)
+        check_let_stmt(tree.children[2].children[0], "x", ("num", "42"), 3)
+
+        # Specifically check bodies of let constructs
+        self.assertEqual(tree.children[0].children[2].data, "block")
         self.assertEqual(len(tree.children[0].children[2].children), 1)
         self.assertEqual(tree.children[0].children[2].children[0].data, "ident")
         self.assertEqual(tree.children[0].children[2].children[0].children[0], "x")
+
+        # Skip second and third let as these are identical to the first
+        self.assertEqual(tree.children[3].children[2].data, "block")
+        self.assertEqual(len(tree.children[3].children[2].children), 3)
+        self.assertEqual(tree.children[3].children[2].children[0].data, "bin_op")
+        self.assertEqual(tree.children[3].children[2].children[1].data, "bin_op")
+        self.assertEqual(tree.children[3].children[2].children[2].data, "bin_op")
+        # We don't check the bodies of the bin_ops as these are tested elsewhere
 
     def test_bin_op(self):
         tree = parse_file("/test_code/syntax/bin_op.fl")
@@ -134,7 +158,7 @@ class TestParser(unittest.TestCase):
             self.assertEqual(len(tree.children), len(arg_identifiers) + 2)
             self.assertEqual(tree.children[0], function_identifier)
             self.assertEqual(tree.children[1:-1], arg_identifiers)
-            self.assertEqual(tree.children[-1].data, "body")
+            self.assertEqual(tree.children[-1].data, "block")
             for i in range(len(body)):
                 self.assertEqual(tree.children[-1].children[i].data, body[i][0])
                 if body[i][1] is not None:

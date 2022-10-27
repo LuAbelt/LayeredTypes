@@ -160,7 +160,7 @@ class SimpleInterpreter(lark.visitors.Interpreter):
 
         self.functions[fun_id] = FunctionDefinition(fun_id, arg_identifiers, fun_body)
 
-    def fun_body(self, tree):
+    def block(self, tree):
         result = None
         for child in tree.children:
             result = self.visit(child)
