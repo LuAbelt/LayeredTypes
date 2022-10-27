@@ -1,6 +1,8 @@
 import os
 import unittest
 
+import lark
+
 from compiler.Interpreters import SimpleInterpreter
 from tests.utils import parse_file
 
@@ -134,8 +136,31 @@ class TestInterpreter(unittest.TestCase):
         self.assertEqual(test_interpreter.functions["manyArgs"].name, "manyArgs")
         self.assertEqual(test_interpreter.functions["manyArgs"].args, ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"])
 
-        # TODO: Check the function bodies by running them
+        # Test the function calls
+        from lark import Tree, Token
+        call_tree = Tree(Token('RULE', 'fun_call'), [Token('WORD', 'function'), Tree(Token('RULE', 'ident'), [Token('word', 'arg1')])])
+        result = test_interpreter.run(call_tree, variables = {"arg1": 7}, functions=test_interpreter.functions)
 
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result, [7])
+
+        call_tree = Tree(Token('RULE', 'fun_call'), [Token('WORD', 'noArgs')])
+        result = test_interpreter.run(call_tree, {}, test_interpreter.functions)
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result, [42])
+
+        call_tree = Tree(Token('RULE', 'fun_call'), [Token('WORD', 'twoArgs'), Tree(Token('RULE', 'ident'), [Token('word', 'arg1')]), Tree(Token('RULE', 'ident'), [Token('word', 'arg2')])])
+        result = test_interpreter.run(call_tree, variables = {"arg1": 7, "arg2": 3}, functions=test_interpreter.functions)
+
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result, [7, 3])
+
+        call_tree = Tree(Token('RULE', 'fun_call'), [Token('WORD', 'manyArgs'), Tree(Token('RULE', 'ident'), [Token('word', 'arg1')]), Tree(Token('RULE', 'ident'), [Token('word', 'arg2')]), Tree(Token('RULE', 'ident'), [Token('word', 'arg3')]), Tree(Token('RULE', 'ident'), [Token('word', 'arg4')]), Tree(Token('RULE', 'ident'), [Token('word', 'arg5')]), Tree(Token('RULE', 'ident'), [Token('word', 'arg6')]), Tree(Token('RULE', 'ident'), [Token('word', 'arg7')]), Tree(Token('RULE', 'ident'), [Token('word', 'arg8')]), Tree(Token('RULE', 'ident'), [Token('word', 'arg9')]), Tree(Token('RULE', 'ident'), [Token('word', 'arg10')])])
+        result = test_interpreter.run(call_tree, variables = {"arg1": 1, "arg2": 2, "arg3": 3, "arg4": 4, "arg5": 5, "arg6": 6, "arg7": 7, "arg8": 8, "arg9": 9, "arg10": 10}, functions=test_interpreter.functions)
+
+        self.assertEqual(len(result), 10)
+        self.assertEqual(result, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     def test_if(self):
         tree = parse_file("/test_code/syntax/if_stmt.fl")
 
@@ -153,10 +178,11 @@ class TestInterpreter(unittest.TestCase):
         tree = parse_file("/test_code/syntax/let_stmt.fl")
 
         test_interpreter = SimpleTestInterpreter()
-        result = test_interpreter.run(tree)
+        result = test_interpreter.run(tree, {"y": 7})
 
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0], 42)
+        self.assertEqual(len(result), 4)
+        self.assertEqual(result, [[42],[42],[7],[43,44,45]])
 
-        self.assertEqual(len(test_interpreter.variables),0)
+        self.assertEqual(len(test_interpreter.variables),1)
+        self.assertTrue("y" in test_interpreter.variables.keys())
 
