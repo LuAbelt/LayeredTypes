@@ -1,17 +1,18 @@
 start: _stmt+
 
 ident: WORD
+newline: NEWLINE?
 
-_stmt:       _expr
-            | layer_def
-            | assign
+_stmt:       _expr newline
+            | layer_def newline
+            | assign newline
             | if_stmt
             | let_stmt
-            | fun_def
+            | fun_def newline
 assign:     ident ":=" _expr
             | ident ":=" custom_expr
-if_stmt:    "if" ident "then" _stmt "else" _stmt
-let_stmt:   "let" ident ":=" _expr "in" _stmt
+if_stmt:    "if" ident "then" newline _stmt newline "else" newline _stmt
+let_stmt:   "let" newline ident ":=" _expr newline "in" newline _stmt
 const:      "True" -> true
             | "False" -> false
             | SIGNED_NUMBER -> num
@@ -21,17 +22,18 @@ _expr:       ident
             | fun_call
             | "(" _expr ")"              //Convenience for readability
 custom_expr:    /.+/
-fun_def:    WORD WORD* "{" fun_body "}"
+fun_def:    WORD WORD* "{" newline fun_body newline "}"
 fun_body:   _stmt+
-fun_call:   WORD "(" _fun_args? ")"
+fun_call:   WORD "(" _fun_args? ")" newline
 _fun_args:  _expr | _expr "," _fun_args
 layer_def: ident "::" ident "::"  /.+/  -> layer
 bin_op:     _expr OP _expr
 OP: "+" | "-" | "*" | "==" | "!=" | "<" | ">" | "<=" | ">="
 
 %import common.WORD
-%import common.WS
+%import common.WS_INLINE
 %import common.SIGNED_NUMBER
 %import common.SQL_COMMENT
-%ignore WS
+%import common.NEWLINE
+%ignore WS_INLINE
 %ignore SQL_COMMENT

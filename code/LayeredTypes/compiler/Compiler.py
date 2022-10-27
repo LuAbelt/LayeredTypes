@@ -3,6 +3,7 @@ import os.path
 import lark
 from pathlib import Path
 
+from compiler.transformers.RemoveTokens import RemoveTokens
 from layers.LayerImplWrapper import LayerImplWrapper
 from compiler.transformers.CollectLayers import CollectLayers
 from compiler.Interpreters import SimpleInterpreter
@@ -47,6 +48,8 @@ class LayeredCompiler:
         with open(input_file) as f:
             tree = self.parser.parse(f.read())
 
+        Remover = RemoveTokens(["newline"])
+        tree = Remover.transform(tree)
         return tree
 
     def compile(self, program):
