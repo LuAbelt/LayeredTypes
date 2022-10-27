@@ -55,8 +55,14 @@ class TestParser(unittest.TestCase):
         self.assertEqual(tree.children[0].data, "if_stmt")
         self.assertEqual(tree.children[0].children[0].data, "ident")
         self.assertEqual(tree.children[0].children[0].children[0], "condition")
-        self.assertEqual(tree.children[0].children[1].data, "true")
-        self.assertEqual(tree.children[0].children[2].data, "false")
+
+        self.assertEqual(tree.children[0].children[1].data, "body")
+        self.assertEqual(len(tree.children[0].children[1].children), 1)
+        self.assertEqual(tree.children[0].children[1].children[0].data, "true")
+
+        self.assertEqual(tree.children[0].children[2].data, "body")
+        self.assertEqual(len(tree.children[0].children[2].children), 1)
+        self.assertEqual(tree.children[0].children[2].children[0].data, "false")
 
     def test_let_stmt(self):
         tree = parse_file("/test_code/syntax/let_stmt.fl")
@@ -67,8 +73,11 @@ class TestParser(unittest.TestCase):
         self.assertEqual(tree.children[0].children[0].children[0], "x")
         self.assertEqual(tree.children[0].children[1].data, "num")
         self.assertEqual(tree.children[0].children[1].children[0], "42")
-        self.assertEqual(tree.children[0].children[2].data, "ident")
-        self.assertEqual(tree.children[0].children[2].children[0], "x")
+
+        self.assertEqual(tree.children[0].children[2].data, "body")
+        self.assertEqual(len(tree.children[0].children[2].children), 1)
+        self.assertEqual(tree.children[0].children[2].children[0].data, "ident")
+        self.assertEqual(tree.children[0].children[2].children[0].children[0], "x")
 
     def test_bin_op(self):
         tree = parse_file("/test_code/syntax/bin_op.fl")

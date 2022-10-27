@@ -136,11 +136,11 @@ class TestInterpreter(unittest.TestCase):
 
         result = interpreter.run(tree, {"condition": True})
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0], True)
+        self.assertEqual(result[0], [True])
 
         result = interpreter.run(tree, {"condition": False})
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0], False)
+        self.assertEqual(result[0], [False])
 
     def test_let(self):
         tree = parse_file("/test_code/syntax/let_stmt.fl")
@@ -149,7 +149,7 @@ class TestInterpreter(unittest.TestCase):
         result = interpreter.run(tree)
 
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0], 42)
+        self.assertEqual(result[0], [42])
 
         self.assertEqual(len(interpreter.variables),0)
 
