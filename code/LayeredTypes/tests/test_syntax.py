@@ -2,22 +2,12 @@ import os.path
 import unittest
 
 from compiler.Compiler import LayeredCompiler
+from tests.utils import parse_file
 
 class TestParser(unittest.TestCase):
 
-    def __parse_file(self, file_path):
-        impl_path = os.path.dirname(os.path.realpath(__file__)) + "/implementations.py"
-        layer_path = os.path.dirname(os.path.realpath(__file__)) + "/layer_implementations"
-        compiler = LayeredCompiler(impl_path, layer_path)
-
-        src_path = os.path.dirname(os.path.realpath(__file__)) + f"{file_path}"
-        tree = compiler.parse(src_path)
-
-        return tree
-
-
     def test_layer_def(self):
-        tree = self.__parse_file("/test_code/syntax/layer.fl")
+        tree = parse_file("/test_code/syntax/layer.fl")
 
         self.assertEqual(tree.data, "start")
         self.assertEqual(tree.children[0].data, "layer")
@@ -29,7 +19,7 @@ class TestParser(unittest.TestCase):
         pass
 
     def test_assign(self):
-        tree = self.__parse_file("/test_code/syntax/assign.fl")
+        tree = parse_file("/test_code/syntax/assign.fl")
 
         self.assertEqual(tree.data, "start")
         self.assertEqual(tree.children[0].data, "assign")
@@ -43,7 +33,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(tree.children[1].children[1].data, "ident")
         self.assertEqual(tree.children[1].children[1].children[0], "x")
 
-        tree = self.__parse_file("/test_code/syntax/assign_custom.fl")
+        tree = parse_file("/test_code/syntax/assign_custom.fl")
 
         self.assertEqual(tree.data, "start")
         self.assertEqual(tree.children[0].data, "assign")
@@ -59,7 +49,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(tree.children[1].children[1].children[0], "{1,2,3}")
 
     def test_if_stmt(self):
-        tree = self.__parse_file("/test_code/syntax/if_stmt.fl")
+        tree = parse_file("/test_code/syntax/if_stmt.fl")
 
         self.assertEqual(tree.data, "start")
         self.assertEqual(tree.children[0].data, "if_stmt")
@@ -69,7 +59,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(tree.children[0].children[2].data, "false")
 
     def test_let_stmt(self):
-        tree = self.__parse_file("/test_code/syntax/let_stmt.fl")
+        tree = parse_file("/test_code/syntax/let_stmt.fl")
 
         self.assertEqual(tree.data, "start")
         self.assertEqual(tree.children[0].data, "let_stmt")
@@ -81,7 +71,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(tree.children[0].children[2].children[0], "x")
 
     def test_bin_op(self):
-        tree = self.__parse_file("/test_code/syntax/bin_op.fl")
+        tree = parse_file("/test_code/syntax/bin_op.fl")
 
         def check_bin_op(tree, op):
             self.assertEqual(tree.data, "bin_op")
@@ -104,7 +94,7 @@ class TestParser(unittest.TestCase):
 
 
     def test_call(self):
-        tree = self.__parse_file("/test_code/syntax/fun_call.fl")
+        tree = parse_file("/test_code/syntax/fun_call.fl")
 
 
         def check_call(tree, function_identifier, arg_identifiers):
@@ -128,7 +118,7 @@ class TestParser(unittest.TestCase):
         check_call(tree.children[6], "threeArgs", [("ident","first"), ("ident","second"), ("ident","third")])
 
     def test_func_def(self):
-        tree = self.__parse_file("/test_code/syntax/fun_def.fl")
+        tree = parse_file("/test_code/syntax/fun_def.fl")
 
         def check_fun_def(tree, function_identifier, arg_identifiers, body):
             self.assertEqual(tree.data, "fun_def")
@@ -149,7 +139,7 @@ class TestParser(unittest.TestCase):
         check_fun_def(tree.children[3], "manyArgs", ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"], [("ident","first"), ("ident","second"), ("ident","third"), ("ident","fourth"), ("ident","fifth"), ("ident","sixth"), ("ident","seventh"), ("ident","eighth"), ("ident","ninth"), ("ident","tenth")])
 
     def test_constants(self):
-        tree = self.__parse_file("/test_code/syntax/constants.fl")
+        tree = parse_file("/test_code/syntax/constants.fl")
 
         self.assertEqual(tree.data, "start")
         self.assertEqual(tree.children[0].data, "num")

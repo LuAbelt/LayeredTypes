@@ -1,7 +1,10 @@
 import importlib
+from collections import namedtuple
 import lark
 from pathlib import Path
 import sys
+
+FunctionDefinition = namedtuple("FunctionDefinition", ["name", "args", "body"])
 
 class SimpleInterpreter(lark.visitors.Interpreter):
     def __init__(self, implementation_file = "implementations"):
@@ -113,7 +116,7 @@ class SimpleInterpreter(lark.visitors.Interpreter):
     def fun_call(self, tree):
         fun_id = tree.children[0].value
 
-        fun_args = [self.visit(child) for child in tree.children[1:-1]]
+        fun_args = [self.visit(child) for child in tree.children[1:]]
 
         if not fun_id in self.functions.keys():
             if getattr(self.external_functions, fun_id, None):
@@ -121,7 +124,7 @@ class SimpleInterpreter(lark.visitors.Interpreter):
             raise RuntimeError(f"Function '{fun_id}' not defined")
 
         fun_def = self.functions[fun_id]
-        arg_identifiers = fun_def[0]
+        arg_identifiers = fun_def.args
 
         # In order to allow recursive functions we might need to restore the old value of the argument
         restore_vals = dict()
@@ -134,7 +137,7 @@ class SimpleInterpreter(lark.visitors.Interpreter):
 
         # Add the function argument to the variable context
 
-        result = self.visit(fun_def[1])
+        result = self.visit(fun_def.body)
 
         # Remove the function arguments from the variable context
         for arg_ident in arg_identifiers:
@@ -150,12 +153,12 @@ class SimpleInterpreter(lark.visitors.Interpreter):
 
         arg_identifiers = [child.value for child in tree.children[1:-1]]
 
-        fun_def = tree.children[-1]
+        fun_body = tree.children[-1]
 
         if fun_id in self.functions.keys():
             raise RuntimeError(f"Function '{fun_id}' already defined")
 
-        self.functions[fun_id] = (arg_identifiers, fun_def)
+        self.functions[fun_id] = FunctionDefinition(fun_id, arg_identifiers, fun_body)
 
     def fun_body(self, tree):
         result = None
