@@ -125,7 +125,7 @@ class TestParser(unittest.TestCase):
             self.assertEqual(len(tree.children), len(arg_identifiers) + 2)
             self.assertEqual(tree.children[0], function_identifier)
             self.assertEqual(tree.children[1:-1], arg_identifiers)
-            self.assertEqual(tree.children[-1].data, "fun_body")
+            self.assertEqual(tree.children[-1].data, "body")
             for i in range(len(body)):
                 self.assertEqual(tree.children[-1].children[i].data, body[i][0])
                 if body[i][1] is not None:

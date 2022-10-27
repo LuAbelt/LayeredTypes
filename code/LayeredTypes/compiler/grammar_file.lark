@@ -11,8 +11,8 @@ _stmt:       _expr newline
             | fun_def newline
 assign:     ident ":=" _expr
             | ident ":=" custom_expr
-if_stmt:    "if" ident "then" newline _stmt newline "else" newline _stmt
-let_stmt:   "let" newline ident ":=" _expr newline "in" newline _stmt
+if_stmt:    "if" ident "then" newline body newline "else" newline body
+let_stmt:   "let" newline ident ":=" _expr newline "in" newline body
 const:      "True" -> true
             | "False" -> false
             | SIGNED_NUMBER -> num
@@ -22,8 +22,8 @@ _expr:       ident
             | fun_call
             | "(" _expr ")"              //Convenience for readability
 custom_expr:    /.+/
-fun_def:    WORD WORD* "{" newline fun_body newline "}"
-fun_body:   _stmt+
+fun_def:    WORD WORD* "{" newline body newline "}"
+body:   _stmt+
 fun_call:   WORD "(" _fun_args? ")" newline
 _fun_args:  _expr | _expr "," _fun_args
 layer_def: ident "::" ident "::"  /.+/  -> layer
