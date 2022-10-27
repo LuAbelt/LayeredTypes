@@ -25,6 +25,13 @@ class SimpleTestInterpreter(SimpleInterpreter):
 
         return self.visit(tree)
 
+    def block(self, tree):
+        result = []
+        for child in tree.children:
+            result.append(self.visit(child))
+
+        return result
+
 class TestInterpreter(unittest.TestCase):
     def test_assign(self):
         tree = parse_file("/test_code/syntax/assign.fl")
@@ -135,12 +142,12 @@ class TestInterpreter(unittest.TestCase):
         test_interpreter = SimpleTestInterpreter()
 
         result = test_interpreter.run(tree, {"condition": True})
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0], [True])
+        self.assertEqual(len(result), 4)
+        self.assertEqual(result, [[True], [True], [10,11,12],[10]])
 
         result = test_interpreter.run(tree, {"condition": False})
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0], [False])
+        self.assertEqual(len(result), 4)
+        self.assertEqual(result, [[False],[False],[20,21],None])
 
     def test_let(self):
         tree = parse_file("/test_code/syntax/let_stmt.fl")

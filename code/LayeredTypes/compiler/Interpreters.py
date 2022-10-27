@@ -52,7 +52,8 @@ class SimpleInterpreter(lark.visitors.Interpreter):
         if condition:
             return self.visit(tree.children[1])
 
-        return self.visit(tree.children[2])
+        if len(tree.children) > 2:
+            return self.visit(tree.children[2])
 
     def let_stmt(self, tree):
 
