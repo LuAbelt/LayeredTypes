@@ -1,3 +1,25 @@
 function arg {
     arg
 }
+
+noArgs {
+    42
+}
+
+twoArgs first second {
+    first
+    second
+}
+
+manyArgs first second third fourth fifth sixth seventh eighth ninth tenth {
+    first
+    second
+    third
+    fourth
+    fifth
+    sixth
+    seventh
+    eighth
+    ninth
+    tenth
+}

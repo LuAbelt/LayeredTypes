@@ -130,13 +130,23 @@ class TestParser(unittest.TestCase):
     def test_func_def(self):
         tree = self.__parse_file("/test_code/syntax/fun_def.fl")
 
+        def check_fun_def(tree, function_identifier, arg_identifiers, body):
+            self.assertEqual(tree.data, "fun_def")
+            self.assertEqual(len(tree.children), len(arg_identifiers) + 2)
+            self.assertEqual(tree.children[0], function_identifier)
+            self.assertEqual(tree.children[1:-1], arg_identifiers)
+            self.assertEqual(tree.children[-1].data, "fun_body")
+            for i in range(len(body)):
+                self.assertEqual(tree.children[-1].children[i].data, body[i][0])
+                if body[i][1] is not None:
+                    self.assertEqual(tree.children[-1].children[i].children[0], body[i][1])
+
         self.assertEqual(tree.data, "start")
-        self.assertEqual(tree.children[0].data, "fun_def")
-        self.assertEqual(tree.children[0].children[0], "function")
-        self.assertEqual(tree.children[0].children[1], "arg")
-        self.assertEqual(tree.children[0].children[2].data, "fun_body")
-        self.assertEqual(tree.children[0].children[2].children[0].data, "ident")
-        self.assertEqual(tree.children[0].children[2].children[0].children[0], "arg")
+
+        check_fun_def(tree.children[0], "function", ["arg"], [("ident","arg")])
+        check_fun_def(tree.children[1], "noArgs", [], [("num","42")])
+        check_fun_def(tree.children[2], "twoArgs", ["first", "second"], [("ident","first"), ("ident","second")])
+        check_fun_def(tree.children[3], "manyArgs", ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"], [("ident","first"), ("ident","second"), ("ident","third"), ("ident","fourth"), ("ident","fifth"), ("ident","sixth"), ("ident","seventh"), ("ident","eighth"), ("ident","ninth"), ("ident","tenth")])
 
     def test_constants(self):
         tree = self.__parse_file("/test_code/syntax/constants.fl")
