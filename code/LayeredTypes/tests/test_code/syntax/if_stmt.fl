@@ -13,5 +13,8 @@ if condition then {
 } else {
     20
     21
-    22
+}
+
+if condition then {
+    10
 }

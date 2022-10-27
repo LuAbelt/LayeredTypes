@@ -52,25 +52,31 @@ class TestParser(unittest.TestCase):
         tree = parse_file("/test_code/syntax/if_stmt.fl")
 
         self.assertEqual(tree.data, "start")
-        self.assertEqual(len(tree.children), 3)
+        self.assertEqual(len(tree.children), 4)
 
-        self.assertEqual(tree.children[0].data, "if_stmt")
-        self.assertEqual(tree.children[0].children[0].data, "ident")
-        self.assertEqual(tree.children[0].children[0].children[0], "condition")
+        def check_if_stmt(tree, condition, then_body_length, else_body_length):
+            self.assertEqual(tree.data, "if_stmt")
+            self.assertEqual(tree.children[0].data, "ident")
+            self.assertEqual(tree.children[0].children[0], condition)
+            self.assertEqual(tree.children[1].data, "block")
+            self.assertEqual(len(tree.children[1].children), then_body_length)
 
-        self.assertEqual(tree.children[0].children[1].data, "block")
-        self.assertEqual(len(tree.children[0].children[1].children), 1)
-        self.assertEqual(tree.children[0].children[1].children[0].data, "true")
+            if else_body_length > 0:
+                self.assertEqual(tree.children[2].data, "block")
+                self.assertEqual(len(tree.children[2].children), else_body_length)
 
-        self.assertEqual(tree.children[0].children[2].data, "block")
-        self.assertEqual(len(tree.children[0].children[2].children), 1)
-        self.assertEqual(tree.children[0].children[2].children[0].data, "false")
+        check_if_stmt(tree.children[0], "condition", 1, 1)
+        check_if_stmt(tree.children[1], "condition", 1, 1)
+        check_if_stmt(tree.children[2], "condition", 3, 2)
+        check_if_stmt(tree.children[3], "condition", 1, 0)
+
+        # We skip checking parsing of the body of the if statement, because it is already tested in other tests
 
     def test_let_stmt(self):
         tree = parse_file("/test_code/syntax/let_stmt.fl")
 
         self.assertEqual(tree.data, "start")
-        self.assertEqual(len(tree.children), 3)
+        self.assertEqual(len(tree.children), 4)
 
         def check_let_stmt(tree, ident, value, body_length):
             self.assertEqual(tree.data, "let_stmt")
@@ -87,7 +93,7 @@ class TestParser(unittest.TestCase):
         check_let_stmt(tree.children[0], "x", ("num", "42"), 1)
         check_let_stmt(tree.children[1], "x", ("num", "42"), 1)
         check_let_stmt(tree.children[2], "x", ("ident", "y"), 1)
-        check_let_stmt(tree.children[2].children[0], "x", ("num", "42"), 3)
+        check_let_stmt(tree.children[3], "x", ("num", "42"), 3)
 
         # Specifically check bodies of let constructs
         self.assertEqual(tree.children[0].children[2].data, "block")
