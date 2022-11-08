@@ -7,6 +7,3 @@ def typecheck(tree):
 
 def parse_type(type_str):
     print(f"parse_type called with type_str {type_str}")
-
-def test(x):
-    print(f"Called test with value {x}!")

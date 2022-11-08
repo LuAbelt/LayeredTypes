@@ -6,6 +6,7 @@ from pathlib import Path
 from compiler.transformers.RemoveTokens import RemoveTokens
 from layers.LayerImplWrapper import LayerImplWrapper
 from compiler.transformers.CollectLayers import CollectLayers
+from compiler.transformers.CheckCF import CheckCF
 from compiler.Interpreters import SimpleInterpreter
 
 class LayeredCompiler:
@@ -36,10 +37,10 @@ class LayeredCompiler:
     def __typecheck(self, tree):
         # TODO: Implement proper typechecking
         lv = CollectLayers()
+        cf_check = CheckCF()
 
         reducedTree = lv.transform(tree)
-
-        # layer_wrapper = LayerImplWrapper(lv.layers["base"])
+        cf_check.visit_topdown(reducedTree)
 
         return reducedTree
         pass
