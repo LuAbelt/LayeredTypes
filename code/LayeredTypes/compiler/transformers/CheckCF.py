@@ -46,7 +46,7 @@ class CheckCF(lark.visitors.Visitor):
 
         if fun_name not in self.identifiers:
             # Emit a warning if the function is not defined
-            warn(f"Function {fun_name} not defined in this scope. It needs to be defined in Python")
+            warn(f"Function {fun_name} not defined in this scope. It needs to be defined in Python", RuntimeWarning)
 
         for child in tree.children[1:]:
             self.visit_topdown(child)
@@ -57,7 +57,7 @@ class CheckCF(lark.visitors.Visitor):
         if fun_name in self.identifiers:
             raise RuntimeError(f"Identifier {fun_name} already defined")
 
-        arg_names = [arg.value for arg in tree.children[1:]]
+        arg_names = [arg.value for arg in tree.children[1:-1]]
 
         # We add the the argument names to the set only for the duration of the function definition
         self.identifiers.add(fun_name)
@@ -65,7 +65,7 @@ class CheckCF(lark.visitors.Visitor):
 
         self.visit_topdown(tree.children[-1])
 
-        self.identifiers.discard(arg_names)
+        self.identifiers.difference_update(arg_names)
         # After definition, we keep the function name in the set as it can be used as a function
 
         return tree
