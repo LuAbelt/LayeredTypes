@@ -1,0 +1,5 @@
+x := True
+
+let x := 42 in {
+    x
+}

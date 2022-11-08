@@ -34,8 +34,6 @@ class CheckCF(lark.visitors.Visitor):
 
         self.identifiers.discard(identifier)
 
-
-
     def ident(self, tree):
         identifier = tree.children[0].value
         if identifier not in self.identifiers:

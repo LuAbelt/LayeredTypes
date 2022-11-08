@@ -45,7 +45,27 @@ class TestControlFlow(unittest.TestCase):
         except Exception:
             self.fail("Unexpected exception raised")
 
-    def test_let_scope(self):
-        pass
+    def test_let_in_scope(self):
+        tree = parse_file("/test_code/control_flow/let_in_scope.fl")
+
+        check_cf = CheckCF()
+
+        try:
+            check_cf.visit_topdown(tree)
+        except Exception:
+            self.fail("Unexpected exception raised")
 
 
+    def test_let_out_of_scope(self):
+        tree = parse_file("/test_code/control_flow/let_out_of_scope.fl")
+
+        check_cf = CheckCF()
+
+        self.assertRaises(RuntimeError, check_cf.visit_topdown, tree)
+
+    def test_let_already_defined(self):
+        tree = parse_file("/test_code/control_flow/let_already_defined.fl")
+
+        check_cf = CheckCF()
+
+        self.assertRaises(RuntimeError, check_cf.visit_topdown, tree)
