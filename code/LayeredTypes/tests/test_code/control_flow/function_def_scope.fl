@@ -1,0 +1,7 @@
+shouldPass x y z {
+    x
+    y
+    z
+}
+
+shouldPass 1 2 3

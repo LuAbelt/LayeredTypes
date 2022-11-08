@@ -1,0 +1,5 @@
+shouldNotPass x {
+    x
+}
+
+x

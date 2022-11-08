@@ -1,0 +1,9 @@
+x := True
+
+if x then {
+    True
+}
+
+if y then {
+    True
+}
