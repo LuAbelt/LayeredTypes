@@ -15,9 +15,9 @@ class TestControlFlow(unittest.TestCase):
             check_cf.visit_topdown(tree1)
 
         self.assertEqual(context.exception.lineno, 1)
-        self.assertEqual(context.exception.offset, 0)
+        self.assertEqual(context.exception.offset, 1)
         self.assertEqual(context.exception.end_lineno, 1)
-        self.assertEqual(context.exception.end_offset, 9)
+        self.assertEqual(context.exception.end_offset, 10)
 
         with self.assertRaises(SyntaxError) as context:
             check_cf.visit_topdown(tree2)
@@ -56,9 +56,9 @@ class TestControlFlow(unittest.TestCase):
             check_cf.visit_topdown(tree)
 
         self.assertEqual(context.exception.lineno, 5)
-        self.assertEqual(context.exception.offset, 0)
+        self.assertEqual(context.exception.offset, 1)
         self.assertEqual(context.exception.end_lineno, 5)
-        self.assertEqual(context.exception.end_offset, 1)
+        self.assertEqual(context.exception.end_offset, 2)
 
     def test_recursive_fun(self):
         tree = parse_file("/test_code/control_flow/recursive_fun.fl")
@@ -90,9 +90,9 @@ class TestControlFlow(unittest.TestCase):
             check_cf.visit_topdown(tree)
 
         self.assertEqual(context.exception.lineno, 5)
-        self.assertEqual(context.exception.offset, 0)
+        self.assertEqual(context.exception.offset, 1)
         self.assertEqual(context.exception.end_lineno, 5)
-        self.assertEqual(context.exception.end_offset, 1)
+        self.assertEqual(context.exception.end_offset, 2)
 
     def test_let_already_defined(self):
         tree = parse_file("/test_code/control_flow/let_already_defined.fl")
@@ -103,6 +103,6 @@ class TestControlFlow(unittest.TestCase):
             check_cf.visit_topdown(tree)
 
         self.assertEqual(context.exception.lineno, 3)
-        self.assertEqual(context.exception.offset, 4)
+        self.assertEqual(context.exception.offset, 5)
         self.assertEqual(context.exception.end_lineno, 3)
-        self.assertEqual(context.exception.end_offset, 5)
+        self.assertEqual(context.exception.end_offset, 6)

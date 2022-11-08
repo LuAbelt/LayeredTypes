@@ -43,7 +43,13 @@ class CheckCF(lark.visitors.Interpreter):
     def ident(self, tree):
         identifier = tree.children[0].value
         if identifier not in self.identifiers:
-            raise RuntimeError(f"Identifier {identifier} not defined")
+            meta = tree.meta
+            error = SyntaxError(f"Identifier {identifier} not defined")
+            error.lineno = meta.line
+            error.offset = meta.column
+            error.end_lineno = meta.end_line
+            error.end_offset = meta.end_column
+            raise error
 
     def fun_call(self, tree):
         fun_name = tree.children[0].value
