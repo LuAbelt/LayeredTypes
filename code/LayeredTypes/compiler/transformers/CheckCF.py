@@ -3,7 +3,7 @@ from warnings import warn
 import lark
 
 
-class CheckCF(lark.visitors.Visitor):
+class CheckCF(lark.visitors.Interpreter):
     def __init__(self):
         super().__init__()
         self.identifiers = set()
@@ -11,7 +11,7 @@ class CheckCF(lark.visitors.Visitor):
     def assign(self, tree):
         # We first check the right hand side of the assignment
         # This is to detect if the identifier is used before it is defined
-        self.visit_topdown(tree.children[1])
+        self.visit(tree.children[1])
 
         # Add defined identifier to set
         identifier = tree.children[0].children[0].value
@@ -30,7 +30,7 @@ class CheckCF(lark.visitors.Visitor):
         # We add the identifier to the set only for the duration of the let construct
         self.identifiers.add(identifier)
 
-        self.visit_topdown(tree.children[2])
+        self.visit(tree.children[2])
 
         self.identifiers.discard(identifier)
 
@@ -61,7 +61,7 @@ class CheckCF(lark.visitors.Visitor):
         self.identifiers.add(fun_name)
         self.identifiers.update(arg_names)
 
-        self.visit_topdown(tree.children[-1])
+        self.visit(tree.children[-1])
 
         self.identifiers.difference_update(arg_names)
         # After definition, we keep the function name in the set as it can be used as a function

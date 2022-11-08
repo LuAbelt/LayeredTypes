@@ -25,7 +25,11 @@ class LayeredCompiler:
 
         # Build path for grammar file
         grammar_file = os.path.dirname(os.path.realpath(__file__)) + "/grammar_file.lark"
-        self.parser = lark.Lark.open(grammar_file, parser= "lalr", debug=True)
+        self.parser = lark.Lark.open(grammar_file
+                                     , parser= "lalr"
+                                     , debug=True
+                                     , propagate_positions=True
+                                     , transformer=RemoveTokens(["newline"]))
 
     def typecheck(self, input_file):
         tree = self.parse(input_file)
@@ -40,7 +44,7 @@ class LayeredCompiler:
         cf_check = CheckCF()
 
         reducedTree = lv.transform(tree)
-        cf_check.visit_topdown(reducedTree)
+        cf_check.visit(reducedTree)
 
         return reducedTree
         pass
