@@ -14,7 +14,7 @@ class CheckCF(lark.visitors.Visitor):
         self.visit_topdown(tree.children[1])
 
         # Add defined identifier to set
-        identifier = tree[0].children[0].value
+        identifier = tree.children[0].children[0].value
         self.identifiers.add(identifier)
 
     def layer_def(self, tree):
