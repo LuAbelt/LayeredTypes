@@ -25,7 +25,13 @@ class CheckCF(lark.visitors.Interpreter):
         identifier = tree.children[0].children[0].value
 
         if identifier in self.identifiers:
-            raise RuntimeError(f"Identifier {identifier} already defined")
+            meta = tree.children[0].meta
+            error = SyntaxError(f"Identifier {identifier} already defined")
+            error.lineno = meta.line
+            error.offset = meta.column
+            error.end_lineno = meta.end_line
+            error.end_offset = meta.end_column
+            raise error
 
         # We add the identifier to the set only for the duration of the let construct
         self.identifiers.add(identifier)
