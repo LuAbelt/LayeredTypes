@@ -1,3 +1,4 @@
+import graphlib
 import os.path
 
 import lark
@@ -39,15 +40,29 @@ class LayeredCompiler:
         return True
 
     def __typecheck(self, tree):
-        # TODO: Implement proper typechecking
         lv = CollectLayers()
         cf_check = CheckCF()
 
         reducedTree = lv.transform(tree)
         cf_check.visit(reducedTree)
 
+        layer_graph = {}
+        layers = {}
+        for layer_id in lv.layers:
+            layers[layer_id] = LayerImplWrapper(self.layer_base_dir, lv.layers[layer_id])
+            layer_graph[layer_id] = layers[layer_id].depends_on()
+
+        # Check for cycles
+        try:
+            topo_order = graphlib.TopologicalSorter(layer_graph).static_order()
+        except graphlib.CycleError as e:
+            raise RuntimeError(f"Cycle in layer dependencies: {e.args[0]}")
+
+        # Incrementally typecheck each layer based on their topological order
+        for layer_id in topo_order:
+            layers[layer_id].typecheck()
+
         return reducedTree
-        pass
 
     def parse(self, input_file):
         with open(input_file) as f:
