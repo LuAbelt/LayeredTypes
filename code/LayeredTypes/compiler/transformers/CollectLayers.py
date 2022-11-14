@@ -14,6 +14,6 @@ class CollectLayers(lark.Transformer):
 
         if not layer_ident in self.layers.keys():
             self.layers[layer_ident] = Layer(layer_ident)
-        print("Processing layer {} for identifier {} with rule '{}'".format(layer_ident, ident, refinement))
+        print("Collecting layer {} for identifier {} with rule '{}'".format(layer_ident, ident, refinement))
         self.layers[layer_ident].add_refinement(ident,refinement)
         return lark.Discard

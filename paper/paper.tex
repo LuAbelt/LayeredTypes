@@ -136,9 +136,9 @@
 %%
 %% The "title" command has an optional parameter,
 %% allowing the author to define a "short title" to be used in page headers.
-\title{LayeredTypes}
+% \title{LayeredTypes}
 %TODO: Proper Title
-%\title[LayeredTypes]{Layered Types -- A structured approach to arbitrarily combine Liquid Types}
+\title[Layered Types]{Layered Types -- A structured approach to arbitrarily combine Liquid Types}
 
 %%
 %% The "author" command and its associated commands are used to define
@@ -313,11 +313,15 @@ One current challenge when using liquid types is that all predicates for a type 
 
 \paragraph{Improved Usability and Reusability}
 
-In current Liquid Type implementations, types that require multiple predicates are defined as a single type. This may make it difficult for a developer to directly identify which properties a specific liquid type ensures. By separating different properties into a more fine-grained layered approach, this may make it easier to identify these properties. Additionally, by separating the predicates into different layers, it is possible to reuse previously defined liquid types in a more flexible way. For example, if a developer wants to refine a previously defined liquid type, they can now do so by adding a new layer to it, instead of having to redefine the entire type.
+In current Liquid Type implementations, types that require multiple predicates are defined as a single type. This may make it difficult for a developer to directly identify which properties a specific liquid type ensures. By separating different properties into a more fine-grained layered approach, this may make it easier to identify these properties. Additionally, by separating the predicates into different layers, it is possible to reuse liquid types in a more flexible way. For example, if a developer wants to refine a previously defined liquid type, they can now do so by adding a new layer to it, instead of having to redefine the entire type.
 
 \paragraph{Improved Composability}
 
 In addition to the improved reusability of our approach, we also expect it to improve the composability of different liquid types. With our suggested approach, new refinements can simply be created by composing already existing layers. This vastly increases modularity of the liquid type approach. It also may allow to re-use layers that have already been defined by other developers for ones own implementation.
+
+\paragraph{Improved Modularity}
+
+By separating the predicates into different layers, it is possible to reuse previously defined liquid types in a more flexible way. For example, if a developer wants to refine a previously defined liquid type, they can now do so by adding a new layer to it, instead of having to redefine the entire type. Additionally, this also supports the seperation of concerns when collaborating with other developers. In current implementations, when interfacing with other developers' code, one needs to be aware of all the refinements required by such code in order to interact with it. When different properties are divided into proper layers, this is no longer required.
 
 \subsection{Approach}
 We will start by giving a brief overview of the general principles of refinement types and liquid types in general in section \ref{sec:background}. Additionally, we will discuss the current state of the art in liquid types and gradual verification in section \ref{sec:related}. 
@@ -325,8 +329,6 @@ We will start by giving a brief overview of the general principles of refinement
 In section \ref{sec:implementation} we will first give a more detailed description of our approach and define a simple functional language that we will use for further demonstration. We will then implement a prototype type checker for our layered approach. Using this simple prototype we will showcase how our approach can be used on various simple examples.
 
 In section \ref{sec:evaluation} we will discuss the limitations of our approach and possible extensions. Additionally, we will evaluate how our approach compares to using a pure, non-layered, verification approach.
-
-Test
 
 \subsection{Contributions}
 \section{Background}
@@ -409,6 +411,8 @@ After initially parsing the AST, it will contain explicit nodes for each of the 
 
 Using the \texttt{depends\_on} function, the layered type checker will first build a dependency graph of all layers. It will then topologically sort the layers and check them in the correct order. Once all layers have been checked successfully, the interpreter will execute the program.
 
+Using this architecture, we provide a flexible framework that allows to easily extend our toy language with various type checking layers. Similar to passes in a compiler, the layers can be added and removed easily. Additionally, the layers can be easily combined to create more complex type checking layers. 
+
 \subsection{Examples}
 \label{ssec:examples}
 
@@ -418,6 +422,7 @@ Using the \texttt{depends\_on} function, the layered type checker will first bui
 \label{sec:conclusion}
 \section{Acknowledgments}
 \label{sec:acknowledgments}
+This work was supported by \textit{Fundação para a Ciência e Tecnologia} (FCT) in the LASIGE Research Unit under the ref. UIDB/00408/2020 and UIDP/00408/2020, by the CMU--Portugal project CAMELOT (LISBOA-01-0247-FEDER-045915), and the RAP project under the reference (EXPL/CCI-COM/1306/2021).
 
 \end{document}
 \endinput

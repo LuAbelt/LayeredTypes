@@ -13,17 +13,19 @@ ensureNonEmpty :: [Int] -> [Int]
 ensureNonEmpty [] = [0]
 ensureNonEmpty x = x
 
-i1 :: Int
--- i1 = myHead []                    -- Not allowed
-i1 = myHead (ensureNonEmpty [])   -- Allowed
+i1 :: [Int]
+i1 = [2,5,6,3,2]                    -- Not allowed
+-- i1 = myHead (ensureNonEmpty [])   -- Allowed
 
 {-@ type Ordered a = [a]<{\x v -> x <= v}> @-}
 -- Not possible to arbitrarly combine NonEmpty and Ordered into one refinement type
-{-@ type NonEmptyOrdered a = {v:[a]<{\x v -> x >= v}> | len v > 0 }@-}
+{-@ type OrderedList a = {v:[a]<{\x v -> x >= v}> | len v > 0 }@-}
 
 -- Extracting the maximum value from a non-empty and ordered list is equivalent to head
-{-@ maxVal :: NonEmptyOrdered Int -> Int @-}
+{-@ maxVal :: OrderedList Int -> Int @-}
 maxVal :: [Int] -> Int
 maxVal (x:_) = x
+
+r = maxVal i1 
 
 main = putStrLn "Hello, Worldi!"

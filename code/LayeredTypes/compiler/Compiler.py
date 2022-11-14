@@ -31,6 +31,7 @@ class LayeredCompiler:
                                      , debug=True
                                      , propagate_positions=True
                                      , transformer=RemoveTokens(["newline"]))
+        self.layers = dict()
 
     def typecheck(self, input_file):
         tree = self.parse(input_file)
@@ -43,14 +44,14 @@ class LayeredCompiler:
         lv = CollectLayers()
         cf_check = CheckCF()
 
-        reducedTree = lv.transform(tree)
-        cf_check.visit(reducedTree)
+        tree = lv.transform(tree)
+        cf_check.visit(tree)
 
         layer_graph = {}
-        layers = {}
+        self.layers = {}
         for layer_id in lv.layers:
-            layers[layer_id] = LayerImplWrapper(self.layer_base_dir, lv.layers[layer_id])
-            layer_graph[layer_id] = layers[layer_id].depends_on()
+            self.layers[layer_id] = LayerImplWrapper(self.layer_base_dir, lv.layers[layer_id])
+            layer_graph[layer_id] = self.layers[layer_id].depends_on()
 
         # Check for cycles
         try:
@@ -60,9 +61,9 @@ class LayeredCompiler:
 
         # Incrementally typecheck each layer based on their topological order
         for layer_id in topo_order:
-            layers[layer_id].typecheck()
+            tree = self.layers[layer_id].typecheck(tree)
 
-        return reducedTree
+        return tree
 
     def parse(self, input_file):
         with open(input_file) as f:

@@ -1,6 +1,5 @@
 def depends_on():
-    print("depends_on called")
-    return set()
+    return {"cycleA"}
 
 def typecheck(tree):
     return tree
