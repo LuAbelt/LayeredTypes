@@ -1,10 +1,12 @@
 import graphlib
 import os.path
+from warnings import warn
 
 import lark
 from pathlib import Path
 
 from compiler.transformers.RemoveTokens import RemoveTokens
+from layers.Layer import Layer
 from layers.LayerImplWrapper import LayerImplWrapper
 from compiler.transformers.CollectLayers import CollectLayers
 from compiler.transformers.CheckCF import CheckCF
@@ -53,6 +55,7 @@ class LayeredCompiler:
             self.layers[layer_id] = LayerImplWrapper(self.layer_base_dir, lv.layers[layer_id])
             layer_graph[layer_id] = self.layers[layer_id].depends_on()
 
+
         # Check for cycles
         try:
             topo_order = graphlib.TopologicalSorter(layer_graph).static_order()
@@ -61,6 +64,11 @@ class LayeredCompiler:
 
         # Incrementally typecheck each layer based on their topological order
         for layer_id in topo_order:
+            # Dynamically load layer if not already loaded
+            if not layer_id in self.layers:
+                warn(f"Layer {layer_id} was not loaded during CollectLayers, but is required by at least one other layer. Loading it now.")
+                self.layers[layer_id] = LayerImplWrapper(self.layer_base_dir, Layer(layer_id))
+
             tree = self.layers[layer_id].typecheck(tree)
 
         return tree

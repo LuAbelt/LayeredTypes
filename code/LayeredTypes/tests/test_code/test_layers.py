@@ -25,7 +25,7 @@ class TestLayerDefinitions(unittest.TestCase):
     def test_missing_layer(self):
         compiler = get_compiler()
         src_file = full_path("/test_code/layers/non_existant_layer.fl")
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(FileNotFoundError):
             compiler.typecheck(src_file)
         pass
 
@@ -74,8 +74,13 @@ class TestLayerDependencies(unittest.TestCase):
         compiler = get_compiler()
         src_file = full_path("/test_code/layers/implicit_dependency.fl")
 
-        compiler.typecheck(src_file)
+        call_order.clear()
+
+        with self.assertWarns(UserWarning):
+            compiler.typecheck(src_file)
 
         self.assertEqual(len(compiler.layers), 2)
         self.assertTrue("A" in compiler.layers)
         self.assertTrue("B" in compiler.layers)
+
+        self.assertEqual(call_order, ["A", "B"])
