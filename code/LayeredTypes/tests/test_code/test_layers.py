@@ -84,3 +84,10 @@ class TestLayerDependencies(unittest.TestCase):
         self.assertTrue("B" in compiler.layers)
 
         self.assertEqual(call_order, ["A", "B"])
+
+    def test_implicit_cycle(self):
+        compiler = get_compiler()
+        src_file = full_path("/test_code/layers/implicit_cycle.fl")
+
+        with self.assertRaises(CycleError):
+            compiler.typecheck(src_file)
