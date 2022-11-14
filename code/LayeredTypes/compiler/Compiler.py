@@ -51,24 +51,33 @@ class LayeredCompiler:
 
         layer_graph = {}
         self.layers = {}
+
+        implicit_layers = set()
+
         for layer_id in lv.layers:
             self.layers[layer_id] = LayerImplWrapper(self.layer_base_dir, lv.layers[layer_id])
-            layer_graph[layer_id] = self.layers[layer_id].depends_on()
+            required_layers = self.layers[layer_id].depends_on()
+            implicit_layers.update(required_layers - set(lv.layers.keys()))
+            layer_graph[layer_id] = required_layers
 
+        while len(implicit_layers) > 0:
+            layer_id = implicit_layers.pop()
+            if not layer_id in self.layers:
+                warn(f"Layer {layer_id} was not loaded during CollectLayers, but is required by at least one other layer. Loading it now.")
+                self.layers[layer_id] = LayerImplWrapper(self.layer_base_dir, Layer(layer_id))
+                required_layers = self.layers[layer_id].depends_on()
+                implicit_layers.update(required_layers - set(self.layers.keys()))
+                layer_graph[layer_id] = required_layers
 
         # Check for cycles
         try:
-            topo_order = graphlib.TopologicalSorter(layer_graph).static_order()
+            topo_order = [n for n in graphlib.TopologicalSorter(layer_graph).static_order()]
         except graphlib.CycleError as e:
-            raise RuntimeError(f"Cycle in layer dependencies: {e.args[0]}")
+            raise graphlib.CycleError(f"Cycle in layer dependencies: {e.args[0]}")
 
         # Incrementally typecheck each layer based on their topological order
         for layer_id in topo_order:
             # Dynamically load layer if not already loaded
-            if not layer_id in self.layers:
-                warn(f"Layer {layer_id} was not loaded during CollectLayers, but is required by at least one other layer. Loading it now.")
-                self.layers[layer_id] = LayerImplWrapper(self.layer_base_dir, Layer(layer_id))
-
             tree = self.layers[layer_id].typecheck(tree)
 
         return tree

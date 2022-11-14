@@ -89,5 +89,23 @@ class TestLayerDependencies(unittest.TestCase):
         compiler = get_compiler()
         src_file = full_path("/test_code/layers/implicit_cycle.fl")
 
-        with self.assertRaises(CycleError):
+        with self.assertRaises(CycleError) as e:
             compiler.typecheck(src_file)
+
+    def test_implicit_multiple_layers(self):
+        compiler = get_compiler()
+        src_file = full_path("/test_code/layers/implicit_multiple_layers.fl")
+
+        call_order.clear()
+
+        with self.assertWarns(UserWarning):
+            compiler.typecheck(src_file)
+
+        self.assertEqual(len(compiler.layers), 4)
+        self.assertTrue("A" in compiler.layers)
+        self.assertTrue("B" in compiler.layers)
+        self.assertTrue("C" in compiler.layers)
+        self.assertTrue("D" in compiler.layers)
+
+        self.assertIn(call_order, [["A", "B", "C", "D"], ["A", "C", "B", "D"]])
+
