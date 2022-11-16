@@ -37,17 +37,17 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
         def __is_num(self, t):
             return t in {"int", "short", "long", "byte", "float", "double"}
 
-        def assign(self, tree):
+        def assign(self, tree: lark.Tree):
             identifier = tree.children[0].children[0].value
             if identifier not in self.variable_types:
-                raise TypeError("Type for variable {} is not defined".format(identifier))
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for variable {identifier} is not defined")
 
             identifier_type = self.variable_types[identifier][-1]
 
             value_type = self.visit(tree.children[1])
 
             if not self.__is_convertable(value_type, identifier_type):
-                raise TypeError("Cannot assign value of type {} to variable of type {}".format(value_type, identifier_type))
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot assign value of type {value_type} to variable of type {identifier_type}")
 
         def ident(self, tree):
             identifier = tree.children[0].value

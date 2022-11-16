@@ -1,7 +1,7 @@
-start: newline* _stmt+
+start: newline _stmt+
 
 ident: WORD
-newline: NEWLINE?
+newline: NEWLINE*
 
 _stmt:       _expr newline
             | layer_def newline

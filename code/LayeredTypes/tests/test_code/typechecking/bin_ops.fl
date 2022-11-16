@@ -11,45 +11,54 @@ longNum::typecheck:: long
 left::typecheck:: bool
 right::typecheck:: bool
 
+-- Variable declarations
+byteNum := 1
+shortNum := 2
+intNum := 3
+longNum := 4
+
+left := True
+right := False
+
 -- Addition
-resultNum = 1 + 2
-resultNum = byteNum + shortNum
-resultNum = byteNum + intNum
-resultNum = byteNum + longNum
-resultNum = shortNum + intNum
-resultNum = shortNum + longNum
-resultNum = intNum + longNum
+resultNum := 1 + 2
+resultNum := byteNum + shortNum
+resultNum := byteNum + intNum
+resultNum := byteNum + longNum
+resultNum := shortNum + intNum
+resultNum := shortNum + longNum
+resultNum := intNum + longNum
 
 -- Subtraction
-resultBool = byteNum - shortNum
-resultBool = byteNum - intNum
-resultBool = byteNum - longNum
-resultBool = shortNum - intNum
-resultBool = shortNum - longNum
-resultBool = shortNum - byteNum
-resultBool = intNum - longNum
-resultBool = intNum - byteNum
-resultBool = intNum - shortNum
-resultBool = longNum - byteNum
-resultBool = longNum - shortNum
-resultBool = longNum - intNum
+resultNum := byteNum - shortNum
+resultNum := byteNum - intNum
+resultNum := byteNum - longNum
+resultNum := shortNum - intNum
+resultNum := shortNum - longNum
+resultNum := shortNum - byteNum
+resultNum := intNum - longNum
+resultNum := intNum - byteNum
+resultNum := intNum - shortNum
+resultNum := longNum - byteNum
+resultNum := longNum - shortNum
+resultNum := longNum - intNum
 
 -- Multiplication
-resultNum = byteNum * shortNum
-resultNum = byteNum * intNum
-resultNum = byteNum * longNum
-resultNum = shortNum * intNum
-resultNum = shortNum * longNum
-resultNum = intNum * longNum
+resultNum := byteNum * shortNum
+resultNum := byteNum * intNum
+resultNum := byteNum * longNum
+resultNum := shortNum * intNum
+resultNum := shortNum * longNum
+resultNum := intNum * longNum
 
 -- Comparisons
-resultBool = byteNum < shortNum
-resultBool = byteNum > shortNum
-resultBool = byteNum <= shortNum
-resultBool = byteNum >= shortNum
-resultBool = byteNum == shortNum
-resultBool = byteNum != shortNum
+resultBool := byteNum < shortNum
+resultBool := byteNum > shortNum
+resultBool := byteNum <= shortNum
+resultBool := byteNum >= shortNum
+resultBool := byteNum == shortNum
+resultBool := byteNum != shortNum
 
 -- Logical operators
-resultBool = left && right
-resultBool = left || right
+resultBool := left && right
+resultBool := left || right
