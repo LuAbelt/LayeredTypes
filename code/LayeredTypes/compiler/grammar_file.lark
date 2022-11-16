@@ -1,4 +1,4 @@
-start: _stmt+
+start: newline* _stmt+
 
 ident: WORD
 newline: NEWLINE?
