@@ -3,9 +3,9 @@ from tests.utils import call_order
 def depends_on():
     return { "B", "C"}
 
-def typecheck(tree):
+def typecheck(tree, annotations, layer_refinements):
     call_order.append("D")
-    return tree
+    return tree, annotations
 
 def parse_type(type_str):
     return None

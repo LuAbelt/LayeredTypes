@@ -76,8 +76,11 @@ class LayeredCompiler:
             raise graphlib.CycleError(f"Cycle in layer dependencies: {e.args[0]}")
 
         # Incrementally typecheck each layer based on their topological order
+        annotations = {}
         for layer_id in topo_order:
-            tree = self.layers[layer_id].typecheck(tree)
+            layer_handle = self.layers[layer_id]
+            layer = self.layers[layer_id].layer
+            tree, annotations = layer_handle.typecheck(tree, annotations, layer.refinements)
 
         return tree
 
