@@ -1,0 +1,19 @@
+-- Tests type checking for functions with multiple arguments.
+
+-- Type information for typechecking layer
+oneArg::typechecking:: int -> int
+twoArg::typechecking:: int -> int -> bool
+x::typechecking:: int
+y::typechecking:: bool
+
+oneArg x {
+    x
+}
+
+twoArgs x y {
+    -- This should not trigger a type error as the type of y in the scope of this function is int
+    x == y
+}
+
+x := oneArg(1)
+y := twoArgs(1, 2)

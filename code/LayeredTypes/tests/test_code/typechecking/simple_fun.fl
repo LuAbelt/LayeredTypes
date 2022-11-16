@@ -1,0 +1,11 @@
+-- Tests that a simple function without arguments is typechecked correctly.
+
+-- Type information for typecheck layer
+x::typechecking:: int
+simpleFun::typechecking:: int
+
+simpleFun {
+    1
+}
+
+x := simpleFun()

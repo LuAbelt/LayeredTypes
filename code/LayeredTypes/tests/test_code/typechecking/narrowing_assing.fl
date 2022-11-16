@@ -1,0 +1,7 @@
+-- Type checking information
+x::typecheck:: int
+y::typecheck:: short
+
+x := 1000
+-- Type checking error
+y := x

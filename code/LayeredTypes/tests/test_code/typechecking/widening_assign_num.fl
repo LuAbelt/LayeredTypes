@@ -1,0 +1,16 @@
+-- Test that widening assignment works
+
+-- Typechecking Layer information
+intNum::typecheck:: int
+shortNum::typecheck:: short
+longNum::typecheck:: long
+byteNum::typecheck:: byte
+
+intNum := 1
+shortNum := 2
+longNum := 3
+byteNum := 4
+
+shortNum := byteNum
+intNum := shortNum
+longNum := intNum

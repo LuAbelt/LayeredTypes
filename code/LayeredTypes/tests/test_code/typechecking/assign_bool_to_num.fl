@@ -1,0 +1,5 @@
+--Type checking information
+x::typecheck:: int
+
+-- Type checking error
+x := True

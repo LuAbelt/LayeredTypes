@@ -77,7 +77,6 @@ class LayeredCompiler:
 
         # Incrementally typecheck each layer based on their topological order
         for layer_id in topo_order:
-            # Dynamically load layer if not already loaded
             tree = self.layers[layer_id].typecheck(tree)
 
         return tree

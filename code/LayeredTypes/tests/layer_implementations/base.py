@@ -1,9 +1,22 @@
+# This is a simple layer that performs some rudimentary typechecking.
+# It supports the following types:
+# - int
+# - short
+# - long
+# - byte
+# - float
+# - double
+# - bool
+# - str
+#
+# We assume that narrowing conversions are allowed, but not widening conversions.
+
 def depends_on():
-    print("depends_on called")
     return set()
 
-def typecheck(tree):
-    return tree
+def typecheck(tree, annotations, layer_refinements):
 
-def parse_type(type_str):
+    return tree, annotations
+
+def parse_type(type_str : str):
     return None

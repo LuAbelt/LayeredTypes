@@ -1,0 +1,12 @@
+-- Tests that function calls with wrong argument types are rejected.
+
+-- Type checking information
+function::typecheck:: int -> int
+boolVal::typecheck:: bool
+
+boolVal = True
+function x {
+    x
+}
+
+function(boolVal)
