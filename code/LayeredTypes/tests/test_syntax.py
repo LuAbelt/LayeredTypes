@@ -189,3 +189,10 @@ class TestParser(unittest.TestCase):
         self.assertEqual(tree.children[2].children[0], "-1")
         self.assertEqual(tree.children[3].data, "true")
         self.assertEqual(tree.children[4].data, "false")
+
+    def test_comment(self):
+        tree = parse_file("/test_code/syntax/comment.fl")
+
+        self.assertEqual(tree.data, "start")
+        self.assertEqual(tree.children[0].data, "ident")
+        self.assertEqual(tree.children[0].children[0], "x")
