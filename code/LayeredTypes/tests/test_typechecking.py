@@ -32,3 +32,6 @@ class Typechecking(unittest.TestCase):
 
     def test_wrong_arg_type(self):
         self.assertTrue(False)
+
+    def test_bin_ops(self):
+        self.assertTrue(False)

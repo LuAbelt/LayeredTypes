@@ -28,7 +28,7 @@ fun_call:   WORD "(" _fun_args? ")" newline
 _fun_args:  _expr | _expr "," _fun_args
 layer_def: ident "::" ident "::"  /.+/  -> layer
 bin_op:     _expr OP _expr
-OP: "+" | "-" | "*" | "==" | "!=" | "<" | ">" | "<=" | ">="
+OP: "+" | "-" | "*" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||"
 
 %import common.WORD
 %import common.WS_INLINE
