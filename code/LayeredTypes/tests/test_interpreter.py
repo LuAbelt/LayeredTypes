@@ -4,7 +4,7 @@ import unittest
 import lark
 
 from compiler.Interpreters import SimpleInterpreter
-from tests.utils import parse_file
+from tests.utils import parse_file, get_compiler, full_path
 
 
 # We create a new Interpreter as we want the return value for each statement
@@ -186,3 +186,8 @@ class TestInterpreter(unittest.TestCase):
         self.assertEqual(len(test_interpreter.variables),1)
         self.assertTrue("y" in test_interpreter.variables.keys())
 
+    def test_recursion(self):
+        compiler = get_compiler()
+        result = compiler.run(full_path("/test_code/syntax/factorial.fl"))
+
+        self.assertEqual(result, 120)

@@ -128,10 +128,10 @@ class SimpleInterpreter(lark.visitors.Interpreter):
         arg_identifiers = fun_def.args
 
 
-        old_variables = self.variables
+        old_variables = self.variables.copy()
         # It might happen that a function definition is nested in another function definition
         # In this case, we need to make sure that after the function call, this function definition is not accessible anymore
-        old_functions = self.functions
+        old_functions = self.functions.copy()
 
         self.variables.clear()
 
@@ -143,8 +143,8 @@ class SimpleInterpreter(lark.visitors.Interpreter):
         result = self.visit(fun_def.body)
 
         # Restore old variable context
-        self.variables = old_variables
-        self.functions = old_functions
+        self.variables = old_variables.copy()
+        self.functions = old_functions.copy()
 
         return result
     def fun_def(self, tree):

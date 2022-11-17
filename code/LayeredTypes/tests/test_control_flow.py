@@ -106,3 +106,36 @@ class TestControlFlow(unittest.TestCase):
         self.assertEqual(context.exception.offset, 5)
         self.assertEqual(context.exception.end_lineno, 3)
         self.assertEqual(context.exception.end_offset, 6)
+
+    def test_variable_out_of_scope(self):
+        tree = parse_file("/test_code/control_flow/variable_out_of_scope.fl")
+
+        check_cf = CheckCF()
+        with self.assertRaises(SyntaxError) as context:
+            check_cf.visit_topdown(tree)
+
+        self.assertEqual(context.exception.lineno, 4)
+        self.assertEqual(context.exception.offset, 4)
+        self.assertEqual(context.exception.end_lineno, 4)
+        self.assertEqual(context.exception.end_offset, 9)
+
+    def test_function_access_out_of_scope(self):
+        tree = parse_file("/test_code/control_flow/function_access_out_of_scope.fl")
+
+        check_cf = CheckCF()
+        with self.assertRaises(SyntaxError) as context:
+            check_cf.visit_topdown(tree)
+
+        self.assertEqual(context.exception.lineno, 12)
+        self.assertEqual(context.exception.offset, 1)
+        self.assertEqual(context.exception.end_lineno, 12)
+        self.assertEqual(context.exception.end_offset, 12)
+
+    def test_nested_function_redefinition(self):
+        tree = parse_file("/test_code/syntax/nested_function_redefinition.fl")
+
+        check_cf = CheckCF()
+        with self.assertRaises(SyntaxError) as context:
+            check_cf.visit_topdown(tree)
+
+        self.assertEqual(context.exception.lineno, 5)

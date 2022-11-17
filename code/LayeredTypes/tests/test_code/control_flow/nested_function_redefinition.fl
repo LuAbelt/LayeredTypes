@@ -1,0 +1,10 @@
+function x {
+    x := 1
+    function y {
+        y := 2
+    }
+
+    function(x)
+}
+
+function(5)

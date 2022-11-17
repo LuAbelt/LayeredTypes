@@ -1,0 +1,12 @@
+function x {
+    x := x+1
+    innerFunction y {
+        y := y+1
+        return y
+    }
+
+    innerFunction(x)
+}
+
+-- This should cause an error, as innerFunction is not defined in the global scope
+innerFunction(1)
