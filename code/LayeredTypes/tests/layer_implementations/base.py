@@ -14,9 +14,9 @@
 def depends_on():
     return set()
 
-def typecheck(tree, annotations, layer_refinements):
+def typecheck(tree):
 
-    return tree, annotations
+    return tree
 
 def parse_type(type_str : str):
     return None

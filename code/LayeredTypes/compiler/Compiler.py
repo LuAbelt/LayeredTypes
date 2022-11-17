@@ -1,15 +1,21 @@
 import graphlib
 import os.path
+from typing import Optional
 from warnings import warn
 
 import lark
 from pathlib import Path
 
+from lark import Transformer
+from lark.tree import Meta
+
 from compiler.transformers.RemoveTokens import RemoveTokens
 from layers.Layer import Layer
 from layers.LayerImplWrapper import LayerImplWrapper
+
 from compiler.transformers.CollectLayers import CollectLayers
 from compiler.transformers.CheckCF import CheckCF
+from compiler.transformers.CreateAnnotatedTree import CreateAnnotatedTree as AnnotateTree
 from compiler.Interpreters import SimpleInterpreter
 
 class LayeredCompiler:
@@ -47,6 +53,7 @@ class LayeredCompiler:
         cf_check = CheckCF()
 
         tree = lv.transform(tree)
+        tree = AnnotateTree().transform(tree)
         cf_check.visit(tree)
 
         layer_graph = {}
@@ -76,11 +83,9 @@ class LayeredCompiler:
             raise graphlib.CycleError(f"Cycle in layer dependencies: {e.args[0]}")
 
         # Incrementally typecheck each layer based on their topological order
-        annotations = {}
         for layer_id in topo_order:
             layer_handle = self.layers[layer_id]
-            layer = self.layers[layer_id].layer
-            tree, annotations = layer_handle.typecheck(tree, annotations, layer.refinements)
+            tree = layer_handle.typecheck(tree)
 
         return tree
 
@@ -90,6 +95,7 @@ class LayeredCompiler:
 
         Remover = RemoveTokens(["newline"])
         tree = Remover.transform(tree)
+
         return tree
 
     def compile(self, program):

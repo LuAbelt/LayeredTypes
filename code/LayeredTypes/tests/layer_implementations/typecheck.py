@@ -1,14 +1,16 @@
 import lark
 
+from compiler.transformers.CreateAnnotatedTree import AnnotatedTree
+
 
 def depends_on():
     return set()
 
-def typecheck(tree, annotations: dict, layer_refinements: dict):
+def typecheck(tree):
     class Typechecker(lark.visitors.Interpreter):
-        def __init__(self, variable_types, function_types):
-            self.variable_types = variable_types
-            self.function_types = function_types
+        def __init__(self):
+            self.variable_types = dict()
+            self.function_types = dict()
             self.__convertable_types = {
                 "int" : {"long"},
                 "short" : {"int", "long"},
@@ -26,7 +28,59 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
         def __is_num(self, t):
             return t in {"int", "short", "long", "byte", "float", "double"}
 
-        def assign(self, tree: lark.Tree):
+        def __annotate_types(self, tree):
+            if not isinstance(tree, AnnotatedTree):
+                return
+
+            for var_type in self.variable_types:
+                if var_type not in tree.annotations:
+                    tree.annotations[var_type] = dict()
+
+                tree.annotations[var_type]["type"] = self.variable_types[var_type]
+
+            for fun_type in self.function_types:
+                if fun_type not in tree.annotations:
+                    tree.annotations[fun_type] = dict()
+
+                tree.annotations[fun_type]["fun_type"] = self.function_types[fun_type]
+
+        def layer(self, tree):
+            self.__annotate_types(tree)
+
+            identifier = tree.children[0].children[0].value
+            layer_name = tree.children[1].children[0].value
+
+            if layer_name != "typecheck":
+                return
+
+            type_str = tree.children[2].value
+
+            annotated_type = [t.strip() for t in type_str.split("->")]
+
+            dict_key = "type"
+
+            if len(annotated_type) > 1:
+                dict_key = "fun_type"
+                # Special handling for functions without arguments
+                if annotated_type[0] == '':
+                    annotated_type = annotated_type[1:]
+                self.function_types[identifier] = annotated_type
+            else:
+                self.variable_types[identifier] = annotated_type
+
+            if identifier not in tree.annotations:
+                tree.annotations[identifier] = dict()
+
+            if dict_key in tree.annotations[identifier]:
+                raise TypeError(f"Type for identifier"
+                                f" {identifier} was already defined previously")
+
+            tree.annotations[identifier][dict_key] = annotated_type
+
+
+        def assign(self, tree: AnnotatedTree):
+            self.__annotate_types(tree)
+
             identifier = tree.children[0].children[0].value
             if identifier not in self.variable_types:
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for variable {identifier} is not defined")
@@ -39,9 +93,13 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot assign value of type {value_type} to variable of type {identifier_type}")
 
         def ident(self, tree):
+            self.__annotate_types(tree)
+
+            # We do not need to look up the type in the annotations, because they are equal to the variable_types
             identifier = tree.children[0].value
             if identifier not in self.variable_types:
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for variable '{identifier}' is not defined")
+
             return self.variable_types[identifier][-1]
 
         def num(self, tree):
@@ -54,6 +112,8 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
             return "bool"
 
         def bin_op(self, tree):
+            self.__annotate_types(tree)
+
             lhs_type = self.visit(tree.children[0])
             rhs_type = self.visit(tree.children[2])
 
@@ -82,12 +142,17 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
 
 
         def fun_call(self, tree):
+            self.__annotate_types(tree)
+
             fun_identifier = tree.children[0].value
 
-            if fun_identifier not in self.function_types:
+            if fun_identifier not in tree.annotations:
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for function {fun_identifier} is not defined")
 
-            expected_arg_types = self.function_types[fun_identifier][:-1]
+            if "fun_type" not in tree.annotations[fun_identifier]:
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for function {fun_identifier} is not defined")
+
+            expected_arg_types = tree.annotations[fun_identifier]["fun_type"][:-1]
             actual_arg_types = [self.visit(child) for child in tree.children[1:]]
 
             if len(expected_arg_types) != len(actual_arg_types):
@@ -102,31 +167,38 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
                                     f" to function {fun_identifier} expecting argument of"
                                     f" type {expected_arg_types[i]}")
 
-            return_type = self.function_types[fun_identifier][-1]
+            return_type = tree.annotations[fun_identifier]["fun_type"][-1]
 
             return return_type
 
-
         def let_stmt(self, tree):
+            self.__annotate_types(tree)
+
             identifier = tree.children[0].children[0].value
 
             old_type = None
             if identifier in self.variable_types:
                 old_type = self.variable_types[identifier]
 
-            self.variable_types[identifier] = ["bool"]
+            self.variable_types[identifier] = self.visit(tree.children[1])
 
             self.visit(tree.children[2])
 
             if old_type is not None:
                 self.variable_types[identifier] = old_type
+                tree.annotations[identifier]["type"] = old_type
         def fun_def(self, tree):
+            self.__annotate_types(tree)
+
             fun_identifier = tree.children[0].value
 
-            if fun_identifier not in self.function_types:
+            if fun_identifier not in tree.annotations:
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for function {fun_identifier} is not defined")
 
-            expected_arg_types = self.function_types[fun_identifier][:-1]
+            if "fun_type" not in tree.annotations[fun_identifier]:
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for function {fun_identifier} is not defined")
+
+            expected_arg_types = tree.annotations[fun_identifier]["fun_type"][:-1]
             arg_names = [child.value for child in tree.children[1:-1]]
 
             if len(expected_arg_types) != len(arg_names):
@@ -136,46 +208,29 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
 
             # Store the old variable types as local variables may shadow global variables
             old_frame = self.variable_types.copy()
+            old_function_frame = self.function_types.copy()
 
+            self.variable_types.clear()
             for i in range(len(expected_arg_types)):
                 self.variable_types[arg_names[i]] = [expected_arg_types[i]]
 
             self.visit(tree.children[-1])
 
             self.variable_types = old_frame.copy()
+            self.function_types = old_function_frame.copy()
 
-    for identifier in layer_refinements:
-        refinements = layer_refinements[identifier]
-        if len(refinements) > 1:
-            raise TypeError(f"{tree.meta.line}:{tree.meta.column}: "
-                            f"Type for variable {identifier} is defined multiple times")
+        def __default__(self, tree):
+            self.__annotate_types(tree)
 
-        if identifier not in annotations:
-            annotations[identifier] = dict()
+            self.visit_children(tree)
 
-        annotated_type = [t.strip() for t in refinements[0].split("->")]
+            return tree
 
-        dict_key = "type"
-
-        if len(annotated_type) > 1:
-            dict_key = "fun_type"
-            # Special handling for functions without arguments
-            if annotated_type[0] == '':
-                annotated_type = annotated_type[1:]
-
-        if dict_key in annotations[identifier]:
-            raise TypeError(f"Type for identifier"
-                            f" {identifier} was already defined by a previous layer "
-                            f"and in the typechecking layer")
-
-        annotations[identifier][dict_key] = annotated_type
-
-    typechecker = Typechecker({identifier : annotations[identifier]["type"] for identifier in annotations if "type" in annotations[identifier]},
-                              {identifier : annotations[identifier]["fun_type"] for identifier in annotations if "fun_type" in annotations[identifier]})
+    typechecker = Typechecker()
 
     typechecker.visit(tree)
 
-    return tree, annotations
+    return tree
 
 def parse_type(type_str : str):
     return None

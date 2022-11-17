@@ -17,7 +17,7 @@ class CheckCF(lark.visitors.Interpreter):
         identifier = tree.children[0].children[0].value
         self.identifiers.add(identifier)
 
-    def layer_def(self, tree):
+    def layer(self, tree):
         # We explicitly ignore the layer definitions as they have no effect on the control flow
         pass
 

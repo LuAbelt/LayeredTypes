@@ -199,7 +199,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(tree.children[0].children[0], "x")
 
     def test_function_name_as_parameter(self):
-        tree = parse_file("test_code/syntax/function_name_as_arg.fl")
+        tree = parse_file("/test_code/syntax/function_name_as_arg.fl")
 
         self.assertEqual(tree.data, "start")
         self.assertEqual(tree.children[0].data, "fun_def")
@@ -208,6 +208,6 @@ class TestParser(unittest.TestCase):
 
         compiler = get_compiler()
 
-        res = compiler.run(full_path("test_code/syntax/function_name_as_arg.fl"))
+        res = compiler.run(full_path("/test_code/syntax/function_name_as_arg.fl"))
 
         self.assertEqual(res, 120)
