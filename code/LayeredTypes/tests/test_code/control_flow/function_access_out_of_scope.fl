@@ -2,7 +2,7 @@ function x {
     x := x+1
     innerFunction y {
         y := y+1
-        return y
+        y
     }
 
     innerFunction(x)

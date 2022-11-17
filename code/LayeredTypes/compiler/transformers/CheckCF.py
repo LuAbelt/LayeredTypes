@@ -65,7 +65,13 @@ class CheckCF(lark.visitors.Interpreter):
         fun_name = tree.children[0].value
 
         if fun_name in self.identifiers:
-            raise RuntimeError(f"Identifier {fun_name} already defined")
+            meta = tree.meta
+            error = SyntaxError(f"Identifier {fun_name} already defined")
+            error.lineno = meta.line
+            error.offset = meta.column
+            error.end_lineno = meta.end_line
+            error.end_offset = meta.end_column
+            raise error
 
         arg_names = [arg.value for arg in tree.children[1:-1]]
 

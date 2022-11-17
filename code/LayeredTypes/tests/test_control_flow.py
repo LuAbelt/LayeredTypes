@@ -132,10 +132,10 @@ class TestControlFlow(unittest.TestCase):
         self.assertEqual(context.exception.end_offset, 12)
 
     def test_nested_function_redefinition(self):
-        tree = parse_file("/test_code/syntax/nested_function_redefinition.fl")
+        tree = parse_file("/test_code/control_flow/nested_function_redefinition.fl")
 
         check_cf = CheckCF()
         with self.assertRaises(SyntaxError) as context:
             check_cf.visit_topdown(tree)
 
-        self.assertEqual(context.exception.lineno, 5)
+        self.assertEqual(context.exception.lineno, 3)
