@@ -1,15 +1,3 @@
-# This is a simple layer that performs some rudimentary typechecking.
-# It supports the following types:
-# - int
-# - short
-# - long
-# - byte
-# - float
-# - double
-# - bool
-# - str
-#
-# We assume that widening conversions are allowed, but not narrowing conversions.
 import lark
 
 
@@ -52,7 +40,7 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
         def ident(self, tree):
             identifier = tree.children[0].value
             if identifier not in self.variable_types:
-                raise TypeError("Type for variable {} is not defined".format(identifier))
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for variable '{identifier}' is not defined")
             return self.variable_types[identifier][-1]
 
         def num(self, tree):
@@ -77,36 +65,41 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
 
                     return lhs_type
 
-                raise TypeError("Cannot perform arithmetic operation on types {} and {}".format(lhs_type, rhs_type))
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot perform arithmetic operation on types {lhs_type} and {rhs_type}")
 
             if op in {"==", "!=", "<", ">", "<=", ">="}:
                 if self.__is_convertable(lhs_type, rhs_type) or self.__is_convertable(rhs_type, lhs_type):
                     return "bool"
 
-                raise TypeError("Cannot compare types {} and {}".format(lhs_type, rhs_type))
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot compare types {lhs_type} and {rhs_type}")
 
             if op in {"&&", "||"}:
                 if lhs_type == "bool" and rhs_type == "bool":
                     return "bool"
 
-                raise TypeError("Cannot perform logical operation on types {} and {}".format(lhs_type, rhs_type))
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot perform logical operation on types {lhs_type} and {rhs_type}")
 
 
         def fun_call(self, tree):
             fun_identifier = tree.children[0].value
 
             if fun_identifier not in self.variable_types:
-                raise TypeError("Type for function {} is not defined".format(fun_identifier))
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for function {fun_identifier} is not defined")
 
             expected_arg_types = self.variable_types[fun_identifier][:-1]
             actual_arg_types = [self.visit(child) for child in tree.children[1:]]
 
             if len(expected_arg_types) != len(actual_arg_types):
-                raise TypeError("Function {} expects {} arguments, but {} were given".format(fun_identifier, len(expected_arg_types), len(actual_arg_types)))
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}:"
+                                f" Function {fun_identifier} expects {len(expected_arg_types)} "
+                                f"arguments, but {len(actual_arg_types)} were given")
 
             for i in range(len(expected_arg_types)):
                 if not self.__is_convertable(actual_arg_types[i],expected_arg_types[i]):
-                    raise TypeError("Cannot pass argument of type {} to function {} expecting argument of type {}".format(actual_arg_types[i], fun_identifier, expected_arg_types[i]))
+                    raise TypeError(f"{tree.meta.line}:{tree.meta.column}: "
+                                    f"Cannot pass argument of type {actual_arg_types[i]}"
+                                    f" to function {fun_identifier} expecting argument of"
+                                    f" type {expected_arg_types[i]}")
 
             return_type = self.variable_types[fun_identifier][-1]
 
@@ -118,13 +111,16 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
     for identifier in layer_refinements:
         refinements = layer_refinements[identifier]
         if len(refinements) > 1:
-            raise TypeError("Type for variable {} is defined multiple times".format(identifier))
+            raise TypeError(f"{tree.meta.line}:{tree.meta.column}: "
+                            f"Type for variable {identifier} is defined multiple times")
 
         if identifier not in annotations:
             annotations[identifier] = dict()
 
         if "type" in annotations[identifier]:
-            raise TypeError("Type for variable {} was already defined by a previous layer and in the typechecking layer".format(identifier))
+            raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for variable"
+                            f" {identifier} was already defined by a previous layer "
+                            f"and in the typechecking layer")
 
         annotations[identifier]["type"] = [t.strip() for t in refinements[0].split("->")]
 

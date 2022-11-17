@@ -12,7 +12,11 @@ class Typechecking(unittest.TestCase):
         # We don't need to do anything here, just make sure it does not throw an exception
         self.assertTrue(True)
     def test_assign_bool_to_num(self):
-        self.assertTrue(False)
+        compiler = get_compiler()
+        src_file = full_path("/test_code/typechecking/assign_bool_to_num.fl")
+
+        with self.assertRaises(Exception):
+            compiler.typecheck(src_file)
 
     def test_bool_assign(self):
         self.__typecheck_correct_file("/test_code/typechecking/bool_assign.fl")
