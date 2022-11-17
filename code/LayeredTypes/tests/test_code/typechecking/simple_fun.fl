@@ -2,7 +2,7 @@
 
 -- Type information for typecheck layer
 x::typecheck:: int
-simpleFun::typecheck:: int
+simpleFun::typecheck:: -> int
 
 simpleFun {
     1

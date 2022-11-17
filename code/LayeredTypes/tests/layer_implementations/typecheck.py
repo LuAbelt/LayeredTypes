@@ -6,8 +6,9 @@ def depends_on():
 
 def typecheck(tree, annotations: dict, layer_refinements: dict):
     class Typechecker(lark.visitors.Interpreter):
-        def __init__(self, variable_types):
+        def __init__(self, variable_types, function_types):
             self.variable_types = variable_types
+            self.function_types = function_types
             self.__convertable_types = {
                 "int" : {"long"},
                 "short" : {"int", "long"},
@@ -83,10 +84,10 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
         def fun_call(self, tree):
             fun_identifier = tree.children[0].value
 
-            if fun_identifier not in self.variable_types:
+            if fun_identifier not in self.function_types:
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for function {fun_identifier} is not defined")
 
-            expected_arg_types = self.variable_types[fun_identifier][:-1]
+            expected_arg_types = self.function_types[fun_identifier][:-1]
             actual_arg_types = [self.visit(child) for child in tree.children[1:]]
 
             if len(expected_arg_types) != len(actual_arg_types):
@@ -101,7 +102,7 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
                                     f" to function {fun_identifier} expecting argument of"
                                     f" type {expected_arg_types[i]}")
 
-            return_type = self.variable_types[fun_identifier][-1]
+            return_type = self.function_types[fun_identifier][-1]
 
             return return_type
 
@@ -122,10 +123,10 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
         def fun_def(self, tree):
             fun_identifier = tree.children[0].value
 
-            if fun_identifier not in self.variable_types:
+            if fun_identifier not in self.function_types:
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for function {fun_identifier} is not defined")
 
-            expected_arg_types = self.variable_types[fun_identifier][:-1]
+            expected_arg_types = self.function_types[fun_identifier][:-1]
             arg_names = [child.value for child in tree.children[1:-1]]
 
             if len(expected_arg_types) != len(arg_names):
@@ -152,14 +153,25 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
         if identifier not in annotations:
             annotations[identifier] = dict()
 
-        if "type" in annotations[identifier]:
-            raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for variable"
+        annotated_type = [t.strip() for t in refinements[0].split("->")]
+
+        dict_key = "type"
+
+        if len(annotated_type) > 1:
+            dict_key = "fun_type"
+            # Special handling for functions without arguments
+            if annotated_type[0] == '':
+                annotated_type = annotated_type[1:]
+
+        if dict_key in annotations[identifier]:
+            raise TypeError(f"Type for identifier"
                             f" {identifier} was already defined by a previous layer "
                             f"and in the typechecking layer")
 
-        annotations[identifier]["type"] = [t.strip() for t in refinements[0].split("->")]
+        annotations[identifier][dict_key] = annotated_type
 
-    typechecker = Typechecker({identifier : annotations[identifier]["type"] for identifier in annotations if "type" in annotations[identifier]})
+    typechecker = Typechecker({identifier : annotations[identifier]["type"] for identifier in annotations if "type" in annotations[identifier]},
+                              {identifier : annotations[identifier]["fun_type"] for identifier in annotations if "fun_type" in annotations[identifier]})
 
     typechecker.visit(tree)
 
