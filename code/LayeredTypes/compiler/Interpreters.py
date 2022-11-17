@@ -127,26 +127,24 @@ class SimpleInterpreter(lark.visitors.Interpreter):
         fun_def = self.functions[fun_id]
         arg_identifiers = fun_def.args
 
-        # In order to allow recursive functions we might need to restore the old value of the argument
-        restore_vals = dict()
+
+        old_variables = self.variables
+        # It might happen that a function definition is nested in another function definition
+        # In this case, we need to make sure that after the function call, this function definition is not accessible anymore
+        old_functions = self.functions
+
+        self.variables.clear()
 
         for arg_ident,fun_arg in zip(arg_identifiers, fun_args):
-            if arg_ident in self.variables.keys():
-                restore_vals[arg_ident] = self.variables[arg_ident]
-
             self.variables[arg_ident] = fun_arg
 
         # Add the function argument to the variable context
 
         result = self.visit(fun_def.body)
 
-        # Remove the function arguments from the variable context
-        for arg_ident in arg_identifiers:
-            self.variables.pop(arg_ident)
-
-            # Restore the old values of the arguments if necessary
-            if arg_ident in restore_vals.keys():
-                self.variables[arg_ident] = restore_vals[arg_ident]
+        # Restore old variable context
+        self.variables = old_variables
+        self.functions = old_functions
 
         return result
     def fun_def(self, tree):
