@@ -4,9 +4,11 @@ import lark
 
 
 class CheckCF(lark.visitors.Interpreter):
-    def __init__(self):
+    def __init__(self, external_functions=None):
         super().__init__()
-        self.identifiers = set()
+        self.variables = set()
+        self.functions = set()
+        self.external_functions = external_functions or set()
 
     def assign(self, tree):
         # We first check the right hand side of the assignment
@@ -15,7 +17,7 @@ class CheckCF(lark.visitors.Interpreter):
 
         # Add defined identifier to set
         identifier = tree.children[0].children[0].value
-        self.identifiers.add(identifier)
+        self.variables.add(identifier)
 
     def layer(self, tree):
         # We explicitly ignore the layer definitions as they have no effect on the control flow
@@ -24,7 +26,7 @@ class CheckCF(lark.visitors.Interpreter):
     def let_stmt(self, tree):
         identifier = tree.children[0].children[0].value
 
-        if identifier in self.identifiers:
+        if identifier in self.variables:
             meta = tree.children[0].meta
             error = SyntaxError(f"Identifier {identifier} already defined")
             error.lineno = meta.line
@@ -34,15 +36,15 @@ class CheckCF(lark.visitors.Interpreter):
             raise error
 
         # We add the identifier to the set only for the duration of the let construct
-        self.identifiers.add(identifier)
+        self.variables.add(identifier)
 
         self.visit(tree.children[2])
 
-        self.identifiers.discard(identifier)
+        self.variables.discard(identifier)
 
     def ident(self, tree):
         identifier = tree.children[0].value
-        if identifier not in self.identifiers:
+        if identifier not in self.variables:
             meta = tree.meta
             error = SyntaxError(f"Identifier {identifier} not defined")
             error.lineno = meta.line
@@ -54,9 +56,15 @@ class CheckCF(lark.visitors.Interpreter):
     def fun_call(self, tree):
         fun_name = tree.children[0].value
 
-        if fun_name not in self.identifiers:
+        if fun_name not in self.functions and fun_name not in self.external_functions:
             # Emit a warning if the function is not defined
-            warn(f"Function {fun_name} not defined in this scope. It needs to be defined in Python", RuntimeWarning)
+            meta = tree.meta
+            error = SyntaxError(f"Function {fun_name} not defined")
+            error.lineno = meta.line
+            error.offset = meta.column
+            error.end_lineno = meta.end_line
+            error.end_offset = meta.end_column
+            raise error
 
         for child in tree.children[1:]:
             self.visit_topdown(child)
@@ -64,7 +72,11 @@ class CheckCF(lark.visitors.Interpreter):
     def fun_def(self, tree):
         fun_name = tree.children[0].value
 
-        if fun_name in self.identifiers:
+        if fun_name in self.external_functions:
+            # Emit a warning if the function is already defined
+            warn(f"Function {fun_name} is already defined in python. The local definition will take precedence")
+
+        if fun_name in self.functions:
             meta = tree.meta
             error = SyntaxError(f"Identifier {fun_name} already defined")
             error.lineno = meta.line
@@ -75,13 +87,19 @@ class CheckCF(lark.visitors.Interpreter):
 
         arg_names = [arg.value for arg in tree.children[1:-1]]
 
-        # We add the the argument names to the set only for the duration of the function definition
-        self.identifiers.add(fun_name)
-        self.identifiers.update(arg_names)
+        # We store the current set of variables and functions to restore it after the function definition
+        self.functions.add(fun_name)
+
+        old_variables = self.variables.copy()
+        old_functions = self.functions.copy()
+
+        self.variables.clear()
+        self.variables.update(arg_names)
 
         self.visit(tree.children[-1])
 
-        self.identifiers.difference_update(arg_names)
-        # After definition, we keep the function name in the set as it can be used as a function
+        self.variables = old_variables.copy()
+        self.functions = old_functions.copy()
+
 
         return tree

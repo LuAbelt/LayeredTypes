@@ -45,7 +45,7 @@ class TestControlFlow(unittest.TestCase):
 
         check_cf = CheckCF()
 
-        self.assertWarns(RuntimeWarning, check_cf.visit_topdown, tree)
+        self.assertRaises(SyntaxError, check_cf.visit_topdown, tree)
 
     def test_function_def_scope(self):
         tree = parse_file("/test_code/control_flow/fun_def_out_of_scope.fl")
@@ -115,9 +115,9 @@ class TestControlFlow(unittest.TestCase):
             check_cf.visit_topdown(tree)
 
         self.assertEqual(context.exception.lineno, 4)
-        self.assertEqual(context.exception.offset, 4)
+        self.assertEqual(context.exception.offset, 5)
         self.assertEqual(context.exception.end_lineno, 4)
-        self.assertEqual(context.exception.end_offset, 9)
+        self.assertEqual(context.exception.end_offset, 11)
 
     def test_function_access_out_of_scope(self):
         tree = parse_file("/test_code/control_flow/function_access_out_of_scope.fl")
@@ -129,7 +129,7 @@ class TestControlFlow(unittest.TestCase):
         self.assertEqual(context.exception.lineno, 12)
         self.assertEqual(context.exception.offset, 1)
         self.assertEqual(context.exception.end_lineno, 12)
-        self.assertEqual(context.exception.end_offset, 12)
+        self.assertEqual(context.exception.end_offset, 17)
 
     def test_nested_function_redefinition(self):
         tree = parse_file("/test_code/control_flow/nested_function_redefinition.fl")

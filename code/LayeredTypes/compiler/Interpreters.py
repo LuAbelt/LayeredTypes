@@ -22,6 +22,8 @@ class SimpleInterpreter(lark.visitors.Interpreter):
         sys.modules[module_name] = self.external_functions
         spec.loader.exec_module(self.external_functions)
 
+        self.external_functions_names = [name for name in dir(self.external_functions) if callable(getattr(self.external_functions, name))]
+
         super().__init__()
 
     def run(self, tree):

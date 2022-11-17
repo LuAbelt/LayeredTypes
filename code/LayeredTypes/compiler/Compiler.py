@@ -40,6 +40,7 @@ class LayeredCompiler:
                                      , propagate_positions=True
                                      , transformer=RemoveTokens(["newline"]))
         self.layers = dict()
+        self.interpreter = SimpleInterpreter(self.implementations_file)
 
     def typecheck(self, input_file):
         tree = self.parse(input_file)
@@ -50,7 +51,7 @@ class LayeredCompiler:
 
     def __typecheck(self, tree):
         lv = CollectLayers()
-        cf_check = CheckCF()
+        cf_check = CheckCF(self.interpreter.external_functions_names)
 
         tree = lv.transform(tree)
         tree = AnnotateTree().transform(tree)
@@ -108,9 +109,7 @@ class LayeredCompiler:
     def run(self, program):
         tree = self.compile(program)
 
-        interpreter = SimpleInterpreter(self.implementations_file)
-
-        return interpreter.run(tree)
+        return self.interpreter.run(tree)
 
 
 
