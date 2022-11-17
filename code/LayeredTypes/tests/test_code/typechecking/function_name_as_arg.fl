@@ -1,0 +1,13 @@
+function::typecheck:: int -> int
+
+function function {
+    let cond := (function == 0) in {
+        if cond then {
+               1
+        } else {
+                function * function ( function - 1 )
+        }
+    }
+}
+
+function(5)

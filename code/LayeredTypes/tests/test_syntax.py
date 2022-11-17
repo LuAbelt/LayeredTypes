@@ -2,7 +2,8 @@ import os.path
 import unittest
 
 from compiler.Compiler import LayeredCompiler
-from tests.utils import parse_file
+from tests.utils import parse_file, get_compiler, full_path
+
 
 class TestParser(unittest.TestCase):
 
@@ -196,3 +197,17 @@ class TestParser(unittest.TestCase):
         self.assertEqual(tree.data, "start")
         self.assertEqual(tree.children[0].data, "ident")
         self.assertEqual(tree.children[0].children[0], "x")
+
+    def test_function_name_as_parameter(self):
+        tree = parse_file("test_code/syntax/function_name_as_arg.fl")
+
+        self.assertEqual(tree.data, "start")
+        self.assertEqual(tree.children[0].data, "fun_def")
+        self.assertEqual(tree.children[0].children[0], "function")
+        self.assertEqual(tree.children[0].children[1], "function")
+
+        compiler = get_compiler()
+
+        res = compiler.run(full_path("test_code/syntax/function_name_as_arg.fl"))
+
+        self.assertEqual(res, 120)

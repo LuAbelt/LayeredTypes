@@ -1,10 +1,10 @@
 -- Tests type checking for functions with multiple arguments.
 
 -- Type information for typechecking layer
-oneArg::typechecking:: int -> int
-twoArg::typechecking:: int -> int -> bool
-x::typechecking:: int
-y::typechecking:: bool
+oneArg::typecheck:: int -> int
+twoArgs::typecheck:: int -> int -> bool
+x::typecheck:: int
+y::typecheck:: bool
 
 oneArg x {
     x

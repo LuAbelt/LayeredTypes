@@ -15,7 +15,7 @@ class Typechecking(unittest.TestCase):
         compiler = get_compiler()
         src_file = full_path("/test_code/typechecking/assign_bool_to_num.fl")
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(TypeError):
             compiler.typecheck(src_file)
 
     def test_bool_assign(self):
@@ -28,7 +28,11 @@ class Typechecking(unittest.TestCase):
         self.__typecheck_correct_file("/test_code/typechecking/fun_with_args.fl")
 
     def test_narrowing_assign(self):
-        self.assertTrue(False)
+        compiler = get_compiler()
+        src_file = full_path("/test_code/typechecking/narrowing_assign.fl")
+
+        with self.assertRaises(TypeError):
+            compiler.typecheck(src_file)
 
     def test_simple_bool(self):
         self.__typecheck_correct_file("/test_code/typechecking/simple_bool.fl")
@@ -40,7 +44,14 @@ class Typechecking(unittest.TestCase):
         self.__typecheck_correct_file("/test_code/typechecking/widening_assign_num.fl")
 
     def test_wrong_arg_type(self):
-        self.assertTrue(False)
+        compiler = get_compiler()
+        src_file = full_path("/test_code/typechecking/wrong_arg_type.fl")
+
+        with self.assertRaises(TypeError):
+            compiler.typecheck(src_file)
 
     def test_bin_ops(self):
         self.__typecheck_correct_file("/test_code/typechecking/bin_ops.fl")
+
+    def test_function_name_as_arg(self):
+        self.__typecheck_correct_file("/test_code/typechecking/function_name_as_arg.fl")

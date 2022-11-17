@@ -105,8 +105,43 @@ def typecheck(tree, annotations: dict, layer_refinements: dict):
 
             return return_type
 
+
+        def let_stmt(self, tree):
+            identifier = tree.children[0].children[0].value
+
+            old_type = None
+            if identifier in self.variable_types:
+                old_type = self.variable_types[identifier]
+
+            self.variable_types[identifier] = ["bool"]
+
+            self.visit(tree.children[2])
+
+            if old_type is not None:
+                self.variable_types[identifier] = old_type
         def fun_def(self, tree):
-            raise NotImplementedError("Function definitions are not supported by the typechecker")
+            fun_identifier = tree.children[0].value
+
+            if fun_identifier not in self.variable_types:
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for function {fun_identifier} is not defined")
+
+            expected_arg_types = self.variable_types[fun_identifier][:-1]
+            arg_names = [child.value for child in tree.children[1:-1]]
+
+            if len(expected_arg_types) != len(arg_names):
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}:"
+                                f" Function {fun_identifier} expects {len(expected_arg_types)} "
+                                f"arguments, but {len(arg_names)} were given")
+
+            # Store the old variable types as local variables may shadow global variables
+            old_frame = self.variable_types.copy()
+
+            for i in range(len(expected_arg_types)):
+                self.variable_types[arg_names[i]] = [expected_arg_types[i]]
+
+            self.visit(tree.children[-1])
+
+            self.variable_types = old_frame.copy()
 
     for identifier in layer_refinements:
         refinements = layer_refinements[identifier]
