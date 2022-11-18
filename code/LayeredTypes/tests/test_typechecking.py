@@ -63,16 +63,18 @@ class Typechecking(unittest.TestCase):
         compiler = get_compiler()
         src_file = full_path("/test_code/typechecking/type_only_defined_outer_scope.fl")
 
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(SyntaxError) as context:
             compiler.typecheck(src_file)
 
-        self.assertTrue("6:5: Type for variable 'x' is not defined" in str(context.exception))
+        self.assertEqual(6, context.exception.lineno)
+        self.assertEqual(5, context.exception.offset)
 
     def test_type_only_defined_inner_scope(self):
         compiler = get_compiler()
         src_file = full_path("/test_code/typechecking/type_only_defined_inner_scope.fl")
 
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(SyntaxError) as context:
             compiler.typecheck(src_file)
 
-        self.assertTrue("10:1: Type for variable 'x' is not defined" in str(context.exception))
+        self.assertEqual(10, context.exception.lineno)
+        self.assertEqual(1, context.exception.offset)
