@@ -1,0 +1,14 @@
+-- This test checks whether we can define different types for the same identifier in different scopes.
+placeHolder::typecheck:: ...
+function::types:: int -> bool
+x::types:: bool
+
+
+function y {
+    x::types:: int
+    x := 1337
+
+    x == y
+}
+
+x := function(42)

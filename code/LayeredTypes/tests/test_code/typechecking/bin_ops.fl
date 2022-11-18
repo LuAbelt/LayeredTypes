@@ -1,15 +1,16 @@
 -- Test for correct type checking of binary expressions
+placeHolder::typecheck:: ...
 
-resultNum::typecheck:: long
-resultBool::typecheck:: bool
+resultNum::types:: long
+resultBool::types:: bool
 
-byteNum::typecheck:: byte
-shortNum::typecheck:: short
-intNum::typecheck:: int
-longNum::typecheck:: long
+byteNum::types:: byte
+shortNum::types:: short
+intNum::types:: int
+longNum::types:: long
 
-left::typecheck:: bool
-right::typecheck:: bool
+left::types:: bool
+right::types:: bool
 
 -- Variable declarations
 byteNum := 1

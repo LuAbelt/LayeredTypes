@@ -1,8 +1,8 @@
 -- Tests that function calls with wrong argument types are rejected.
-
+placeHolder::typecheck:: ...
 -- Type checking information
-function::typecheck:: int -> int
-boolVal::typecheck:: bool
+function::types:: int -> int
+boolVal::types:: bool
 
 boolVal := True
 function x {

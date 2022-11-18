@@ -1,0 +1,10 @@
+function::types:: -> bool
+placeHolder::typecheck:: ...
+function {
+    x::types:: bool
+
+    x := True
+    x
+}
+-- This should not typecheck as the type of x is only known within the function
+x

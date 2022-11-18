@@ -1,6 +1,8 @@
-function::typecheck:: int -> int
+placeHolder::typecheck:: ...
+function::types:: int -> int
 
 function function {
+cond::types:: bool
     let cond := (function == 0) in {
         if cond then {
                1

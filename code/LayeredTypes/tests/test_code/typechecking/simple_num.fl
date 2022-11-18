@@ -1,10 +1,10 @@
 -- Simple test to check that typechecking works for integer numbers
-
+placeHolder::typecheck:: ...
 -- Typechecking Layer information
-intNum::typecheck:: int
-shortNum::typecheck:: short
-longNum::typecheck:: long
-byteNum::typecheck:: byte
+intNum::types:: int
+shortNum::types:: short
+longNum::types:: long
+byteNum::types:: byte
 
 intNum := 1
 shortNum := 2

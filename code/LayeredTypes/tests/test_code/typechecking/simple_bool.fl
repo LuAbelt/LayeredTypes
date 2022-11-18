@@ -1,8 +1,8 @@
 -- Tests that typechecking works for bool assignments from literals.
-
+placeHolder::typecheck:: ...
 -- Typechecking Layer information
-boolTrue::typecheck:: bool
-boolFalse::typecheck:: bool
+boolTrue::types:: bool
+boolFalse::types:: bool
 
 boolTrue := True
 boolFalse := False

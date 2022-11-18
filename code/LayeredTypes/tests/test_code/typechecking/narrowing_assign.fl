@@ -1,6 +1,7 @@
+placeHolder::typecheck:: ...
 -- Type checking information
-x::typecheck:: int
-y::typecheck:: short
+x::types:: int
+y::types:: short
 
 x := 1000
 -- Type checking error

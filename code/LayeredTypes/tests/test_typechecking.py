@@ -55,3 +55,24 @@ class Typechecking(unittest.TestCase):
 
     def test_function_name_as_arg(self):
         self.__typecheck_correct_file("/test_code/typechecking/function_name_as_arg.fl")
+
+    def test_type_annotation_different_scope(self):
+        self.__typecheck_correct_file("/test_code/typechecking/type_annotation_different_scope.fl")
+
+    def test_type_only_defined_outer_scope(self):
+        compiler = get_compiler()
+        src_file = full_path("/test_code/typechecking/type_only_defined_outer_scope.fl")
+
+        with self.assertRaises(TypeError) as context:
+            compiler.typecheck(src_file)
+
+        self.assertTrue("6:5: Type for variable 'x' is not defined" in str(context.exception))
+
+    def test_type_only_defined_inner_scope(self):
+        compiler = get_compiler()
+        src_file = full_path("/test_code/typechecking/type_only_defined_inner_scope.fl")
+
+        with self.assertRaises(TypeError) as context:
+            compiler.typecheck(src_file)
+
+        self.assertTrue("10:1: Type for variable 'x' is not defined" in str(context.exception))

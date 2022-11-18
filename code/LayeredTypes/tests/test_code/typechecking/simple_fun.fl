@@ -1,8 +1,8 @@
 -- Tests that a simple function without arguments is typechecked correctly.
-
+placeHolder::typecheck:: ...
 -- Type information for typecheck layer
-x::typecheck:: int
-simpleFun::typecheck:: -> int
+x::types:: int
+simpleFun::types:: -> int
 
 simpleFun {
     1

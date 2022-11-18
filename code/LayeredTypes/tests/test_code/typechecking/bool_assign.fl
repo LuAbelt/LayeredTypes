@@ -1,8 +1,8 @@
 -- Checks that assignment of boolean values to boolean variables works.
-
+placeHolder::typecheck:: ...
 -- Typechecking Layer information
-boolTrue::typecheck:: bool
-boolFalse::typecheck:: bool
+boolTrue::types:: bool
+boolFalse::types:: bool
 
 boolTrue := True
 boolFalse := False

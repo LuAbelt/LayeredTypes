@@ -1,0 +1,7 @@
+x::types:: bool
+placeHolder::typecheck:: ...
+
+function {
+    -- This should not typecheck as the type of x is only defined in the outer scope
+    x
+}
