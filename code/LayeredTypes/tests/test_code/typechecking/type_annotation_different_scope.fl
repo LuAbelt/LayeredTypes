@@ -1,5 +1,7 @@
 -- This test checks whether we can define different types for the same identifier in different scopes.
-placeHolder::typecheck:: ...
+numTypes::typecheck:: int short long byte
+logicalTypes::typecheck:: bool
+subtype::typecheck:: byte <: short <: int <: long
 function::types:: int -> bool
 x::types:: bool
 

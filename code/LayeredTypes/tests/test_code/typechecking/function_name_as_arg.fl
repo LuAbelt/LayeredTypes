@@ -1,4 +1,7 @@
-placeHolder::typecheck:: ...
+numTypes::typecheck:: int short long byte
+logicalTypes::typecheck:: bool
+subtype::typecheck:: byte <: short <: int <: long
+
 function::types:: int -> int
 
 function function {

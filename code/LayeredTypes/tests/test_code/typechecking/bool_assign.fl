@@ -1,5 +1,5 @@
 -- Checks that assignment of boolean values to boolean variables works.
-placeHolder::typecheck:: ...
+logicalTypes::typecheck:: bool
 -- Typechecking Layer information
 boolTrue::types:: bool
 boolFalse::types:: bool
@@ -8,3 +8,5 @@ boolTrue := True
 boolFalse := False
 
 boolTrue := boolFalse
+
+boolTrue := boolTrue || boolFalse

@@ -1,5 +1,7 @@
 -- Test for correct type checking of binary expressions
-placeHolder::typecheck:: ...
+numTypes::typecheck:: int short long byte
+logicalTypes::typecheck:: bool
+subtype::typecheck:: byte <: short <: int <: long
 
 resultNum::types:: long
 resultBool::types:: bool

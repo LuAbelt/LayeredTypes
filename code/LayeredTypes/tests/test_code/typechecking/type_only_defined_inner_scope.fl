@@ -1,5 +1,7 @@
 function::types:: -> bool
-placeHolder::typecheck:: ...
+numTypes::typecheck:: int short long byte
+logicalTypes::typecheck:: bool
+subtype::typecheck:: byte <: short <: int <: long
 function {
     x::types:: bool
 

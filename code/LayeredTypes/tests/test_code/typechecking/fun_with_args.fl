@@ -1,5 +1,7 @@
 -- Tests type checking for functions with multiple arguments.
-placeHolder::typecheck:: ...
+numTypes::typecheck:: int short long byte
+logicalTypes::typecheck:: bool
+subtype::typecheck:: byte <: short <: int <: long
 -- Type information for typechecking layer
 oneArg::types:: int -> int
 twoArgs::types:: int -> int -> bool

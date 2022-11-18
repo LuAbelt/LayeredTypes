@@ -66,7 +66,7 @@ class Typechecking(unittest.TestCase):
         with self.assertRaises(SyntaxError) as context:
             compiler.typecheck(src_file)
 
-        self.assertEqual(6, context.exception.lineno)
+        self.assertEqual(8, context.exception.lineno)
         self.assertEqual(5, context.exception.offset)
 
     def test_type_only_defined_inner_scope(self):
@@ -76,5 +76,5 @@ class Typechecking(unittest.TestCase):
         with self.assertRaises(SyntaxError) as context:
             compiler.typecheck(src_file)
 
-        self.assertEqual(10, context.exception.lineno)
+        self.assertEqual(12, context.exception.lineno)
         self.assertEqual(1, context.exception.offset)

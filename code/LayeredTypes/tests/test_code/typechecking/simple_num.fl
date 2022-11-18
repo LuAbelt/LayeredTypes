@@ -1,5 +1,6 @@
 -- Simple test to check that typechecking works for integer numbers
-placeHolder::typecheck:: ...
+numTypes::typecheck:: int short long byte
+subtype::typecheck:: byte <: short <: int <: long
 -- Typechecking Layer information
 intNum::types:: int
 shortNum::types:: short

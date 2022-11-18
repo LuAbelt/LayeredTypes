@@ -1,4 +1,7 @@
 --Type checking information
+numTypes::typecheck:: int short long byte
+logicalTypes::typecheck:: bool
+subtype::typecheck:: byte <: short <: int <: long
 x::typecheck:: int
 
 -- Type checking error

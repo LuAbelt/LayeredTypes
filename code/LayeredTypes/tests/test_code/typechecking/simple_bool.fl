@@ -1,5 +1,7 @@
 -- Tests that typechecking works for bool assignments from literals.
-placeHolder::typecheck:: ...
+numTypes::typecheck:: int short long byte
+logicalTypes::typecheck:: bool
+subtype::typecheck:: byte <: short <: int <: long
 -- Typechecking Layer information
 boolTrue::types:: bool
 boolFalse::types:: bool

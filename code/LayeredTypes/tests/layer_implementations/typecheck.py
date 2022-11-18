@@ -1,4 +1,5 @@
 import lark
+import igraph
 
 from compiler.transformers.CreateAnnotatedTree import AnnotatedTree
 
@@ -20,11 +21,36 @@ def typecheck(tree):
                 "str" : set()
             }
 
+            self.__subtype_graph = igraph.Graph(2, directed=True)
+            self.__type_ids = {"__num":0,"__logical":1}
+
+        def __add_type_to_graph(self, t):
+            if t not in self.__type_ids:
+                self.__type_ids[t] = len(self.__type_ids)
+                self.__subtype_graph.add_vertex(1)
+
+        def __add_subtype(self, t1, t2):
+            if t1 not in self.__type_ids or t2 not in self.__type_ids:
+                return
+
+            if self.__subtype_graph.are_connected(self.__type_ids[t1], self.__type_ids[t2]):
+                return
+
+            self.__subtype_graph.add_edge(self.__type_ids[t1], self.__type_ids[t2])
+
         def __is_convertable(self, t1, t2):
-            return t1 == t2 or t2 in self.__convertable_types[t1]
+            if t1 == t2:
+                return True
+            if t1 not in self.__type_ids or t2 not in self.__type_ids:
+                return False
+
+            d = self.__subtype_graph.distances(self.__type_ids[t1], self.__type_ids[t2])
+            return d != [[float("inf")]]
 
         def __is_num(self, t):
-            return t in {"int", "short", "long", "byte", "float", "double"}
+            if t not in self.__type_ids:
+                return False
+            return self.__subtype_graph.distances(self.__type_ids[t], self.__type_ids["__num"]) != float("inf")
 
 
         def assign(self, tree: AnnotatedTree):
@@ -54,8 +80,39 @@ def typecheck(tree):
             return variable_types[identifier][-1]
 
         def layer(self, tree):
-            # TODO: Extend typechecking layer for arbitrary type system
-            pass
+            argument = tree.children[0].children[0].value
+            layer_id = tree.children[1].children[0].value
+
+            if layer_id != "typecheck":
+                return
+
+            typecheck_str = tree.children[2].value
+
+            if argument == "numTypes":
+                types = typecheck_str.split()
+
+                for t in types:
+                    self.__add_type_to_graph(t)
+                    self.__add_subtype(t, "__num")
+
+            if argument == "logicalTypes":
+                types = typecheck_str.split()
+
+                for t in types:
+                    self.__add_type_to_graph(t)
+                    self.__add_subtype(t, "__logical")
+
+            if argument == "subtype":
+                subtypes = [t.strip() for t in typecheck_str.split("<:")]
+
+                if len(subtypes) < 2:
+                    raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Invalid subtyping definition")
+
+                self.__add_type_to_graph(subtypes[0])
+                for i in range(1, len(subtypes)):
+                    self.__add_type_to_graph(subtypes[i])
+                    self.__add_subtype(subtypes[i-1], subtypes[i])
+                pass
 
         def num(self, tree):
             return "byte"
