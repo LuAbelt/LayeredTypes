@@ -1,13 +1,10 @@
 import graphlib
 import os.path
-from typing import Optional
 from warnings import warn
 
 import lark
 from pathlib import Path
 
-from lark import Transformer
-from lark.tree import Meta
 
 from compiler.transformers.RemoveTokens import RemoveTokens
 from layers.Layer import Layer
@@ -91,7 +88,7 @@ class LayeredCompiler:
         return tree
 
     def parse(self, input_file):
-        with open(input_file) as f:
+        with open(os.path.abspath(input_file)) as f:
             tree = self.parser.parse(f.read())
 
         Remover = RemoveTokens(["newline"])
@@ -110,6 +107,8 @@ class LayeredCompiler:
         tree = self.compile(program)
 
         return self.interpreter.run(tree)
+
+
 
 
 

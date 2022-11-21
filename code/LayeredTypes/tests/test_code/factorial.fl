@@ -1,8 +1,3 @@
-fac::base::Int -> Int
-fac::liquid::{v:Int | v >= 0} -> {v:Int | v > 0}
-
-y := 2
-
 fac x {
     let cond := (x == 0) in {
             if cond then {

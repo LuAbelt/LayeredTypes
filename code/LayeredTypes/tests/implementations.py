@@ -2,7 +2,7 @@ from builtins import *
 
 def test(x):
     print(f"Called test with value {x}!")
-    return x
+    # return x
 
 def funCall(arg):
     return arg
