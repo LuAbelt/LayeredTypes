@@ -39,12 +39,13 @@ def typecheck(tree):
             self.__subtype_graph.add_edge(self.__type_ids[t1], self.__type_ids[t2])
 
         def __is_convertable(self, t1, t2):
+            if t1 == t2:
+                return True
+
             # Special handling for assignment of num literals
             if t1 == "__num":
                 return self.__is_convertable(t2, "__num")
 
-            if t1 == t2:
-                return True
             if t1 not in self.__type_ids or t2 not in self.__type_ids:
                 return False
 
@@ -205,7 +206,9 @@ def typecheck(tree):
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Condition of if statement must be of type bool")
 
             self.visit(tree.children[1])
-            self.visit(tree.children[2])
+
+            if len(tree.children) > 2:
+                self.visit(tree.children[2])
 
 
     typechecker = Typechecker()

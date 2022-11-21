@@ -1,5 +1,5 @@
 cond::types:: bool
-logicalType::typecheck:: bool
+logicalTypes::typecheck:: bool
 
 cond := True
 
