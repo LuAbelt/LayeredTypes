@@ -1,0 +1,9 @@
+cond::types:: int
+logicalType::typecheck:: bool
+numTypes::typecheck:: int
+
+cond := 42
+
+if cond then {
+    42
+}

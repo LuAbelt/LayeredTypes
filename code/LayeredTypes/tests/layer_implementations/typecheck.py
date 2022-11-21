@@ -39,6 +39,10 @@ def typecheck(tree):
             self.__subtype_graph.add_edge(self.__type_ids[t1], self.__type_ids[t2])
 
         def __is_convertable(self, t1, t2):
+            # Special handling for assignment of num literals
+            if t1 == "__num":
+                return self.__is_convertable(t2, "__num")
+
             if t1 == t2:
                 return True
             if t1 not in self.__type_ids or t2 not in self.__type_ids:
@@ -115,7 +119,7 @@ def typecheck(tree):
                 pass
 
         def num(self, tree):
-            return "byte"
+            return "__num"
 
         def true(self, tree):
             return "bool"
@@ -192,6 +196,15 @@ def typecheck(tree):
             if not self.__is_convertable(value_type, identifier_type):
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot assign value of type {value_type} to variable of type {identifier_type}")
 
+            self.visit(tree.children[2])
+
+        def if_stmt(self, tree):
+            condition_type = self.visit(tree.children[0])
+
+            if not self.__is_convertable(condition_type, "__logical"):
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Condition of if statement must be of type bool")
+
+            self.visit(tree.children[1])
             self.visit(tree.children[2])
 
 

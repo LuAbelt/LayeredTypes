@@ -78,3 +78,13 @@ class Typechecking(unittest.TestCase):
 
         self.assertEqual(12, context.exception.lineno)
         self.assertEqual(1, context.exception.offset)
+
+    def test_if_properly_typed(self):
+        self.__typecheck_correct_file("/test_code/typechecking/if_properly_typed.fl")
+
+    def test_if_illegal_typed(self):
+        compiler = get_compiler()
+        src_file = full_path("/test_code/typechecking/if_illegal_typed.fl")
+
+        with self.assertRaises(TypeError) as context:
+            compiler.typecheck(src_file)
