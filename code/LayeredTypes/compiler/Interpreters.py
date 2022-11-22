@@ -179,3 +179,5 @@ class SimpleInterpreter(lark.visitors.Interpreter):
         expr_str = tree.children[0].value
         print("Custom expression: {}".format(expr_str))
 
+    def layer(self, tree):
+        pass

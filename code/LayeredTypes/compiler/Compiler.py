@@ -72,6 +72,15 @@ class LayeredCompiler:
 
             implicit_layers.update(required_layers - set(lv.layers.keys()))
 
+            implied_layers = self.layers[layer_id].run_before()
+            implicit_layers.update(implied_layers - set(lv.layers.keys()))
+            for implied_layer in implied_layers:
+                if implied_layer not in layer_graph:
+                    layer_graph[implied_layer] = set()
+                layer_graph[implied_layer].add(layer_id)
+
+
+
         while len(implicit_layers) > 0:
             layer_id = implicit_layers.pop()
             if not layer_id in self.layers:

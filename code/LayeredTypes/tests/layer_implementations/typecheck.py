@@ -55,7 +55,7 @@ def typecheck(tree):
         def __is_num(self, t):
             if t not in self.__type_ids:
                 return False
-            return self.__subtype_graph.distances(self.__type_ids[t], self.__type_ids["__num"]) != float("inf")
+            return self.__is_convertable(t, "__num")
 
 
         def assign(self, tree: AnnotatedTree):
@@ -64,8 +64,7 @@ def typecheck(tree):
             identifier_type = tree.get_layer_annotation("types",identifier, "type")
 
             if identifier_type is None:
-                TypeError(
-                    f"{tree.meta.line}:{tree.meta.column}: No type defined for '{identifier}'.")
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: No type defined for '{identifier}'.")
 
             identifier_type = identifier_type[-1]
 
