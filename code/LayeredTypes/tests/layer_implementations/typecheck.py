@@ -61,12 +61,13 @@ def typecheck(tree):
         def assign(self, tree: AnnotatedTree):
             identifier = tree.children[0].children[0].value
 
-            variable_types = {ident: tree.annotations[ident]["type"] for ident in tree.annotations if "type" in tree.annotations[ident]}
+            identifier_type = tree.get_layer_annotation("types",identifier, "type")
 
-            if identifier not in variable_types:
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for variable {identifier} is not defined")
+            if identifier_type is None:
+                TypeError(
+                    f"{tree.meta.line}:{tree.meta.column}: No type defined for '{identifier}'.")
 
-            identifier_type = variable_types[identifier][-1]
+            identifier_type = identifier_type[-1]
 
             value_type = self.visit(tree.children[1])
 
@@ -77,12 +78,12 @@ def typecheck(tree):
             # We do not need to look up the type in the annotations, because they are equal to the variable_types
             identifier = tree.children[0].value
 
-            variable_types = {ident: tree.annotations[ident]["type"] for ident in tree.annotations if "type" in tree.annotations[ident]}
+            variable_types = tree.get_layer_annotation("types",identifier, "type")
 
-            if identifier not in variable_types:
+            if variable_types is None:
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for variable '{identifier}' is not defined")
 
-            return variable_types[identifier][-1]
+            return variable_types[-1]
 
         def layer(self, tree):
             argument = tree.children[0].children[0].value
@@ -158,12 +159,12 @@ def typecheck(tree):
         def fun_call(self, tree):
             fun_identifier = tree.children[0].value
 
-            fun_types = {ident: tree.annotations[ident]["fun_type"] for ident in tree.annotations if "fun_type" in tree.annotations[ident]}
+            fun_types = tree.get_layer_annotation("types",fun_identifier,"fun_type")
 
-            if fun_identifier not in fun_types:
+            if fun_types is None:
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for function {fun_identifier} is not defined")
 
-            expected_arg_types = fun_types[fun_identifier][:-1]
+            expected_arg_types = fun_types[:-1]
             actual_arg_types = [self.visit(child) for child in tree.children[1:]]
 
             if len(expected_arg_types) != len(actual_arg_types):
@@ -178,21 +179,21 @@ def typecheck(tree):
                                     f" to function {fun_identifier} expecting argument of"
                                     f" type {expected_arg_types[i]}")
 
-            return_type = fun_types[fun_identifier][-1]
+            return_type = fun_types[-1]
 
             return return_type
 
         def let_stmt(self, tree):
             identifier = tree.children[0].children[0].value
 
-            variable_types = {ident: tree.annotations[ident]["type"] for ident in tree.annotations if "type" in tree.annotations[ident]}
+            variable_types = tree.get_layer_annotation("types",identifier,"type")
 
-            if identifier not in variable_types:
+            if variable_types is None:
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for variable {identifier} is not defined")
 
             value_type = self.visit(tree.children[1])
 
-            identifier_type = variable_types[identifier][-1]
+            identifier_type = variable_types[-1]
 
             if not self.__is_convertable(value_type, identifier_type):
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot assign value of type {value_type} to variable of type {identifier_type}")

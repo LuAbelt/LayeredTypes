@@ -17,16 +17,10 @@ def typecheck(tree):
                 return
 
             for var_type in self.variable_types:
-                if var_type not in tree.annotations:
-                    tree.annotations[var_type] = dict()
-
-                tree.annotations[var_type]["type"] = self.variable_types[var_type]
+                tree.add_layer_annotation("types",var_type,"type",self.variable_types[var_type])
 
             for fun_type in self.function_types:
-                if fun_type not in tree.annotations:
-                    tree.annotations[fun_type] = dict()
-
-                tree.annotations[fun_type]["fun_type"] = self.function_types[fun_type]
+                tree.add_layer_annotation("types",fun_type,"fun_type",self.function_types[fun_type])
 
         def layer(self, tree):
             self.__annotate_types(tree)
@@ -52,27 +46,22 @@ def typecheck(tree):
             else:
                 self.variable_types[identifier] = annotated_type
 
-            if identifier not in tree.annotations:
-                tree.annotations[identifier] = dict()
-
-            if dict_key in tree.annotations[identifier]:
+            if tree.get_layer_annotation(layer_name,identifier,dict_key) is not None:
                 raise TypeError(f"Type for identifier"
                                 f" {identifier} was already defined previously")
-
-            tree.annotations[identifier][dict_key] = annotated_type
 
         def fun_def(self, tree):
             self.__annotate_types(tree)
 
             fun_identifier = tree.children[0].value
 
-            fun_types = {ident: tree.annotations[ident]["fun_type"] for ident in tree.annotations if "fun_type" in tree.annotations[ident]}
-            var_types = {ident: tree.annotations[ident]["type"] for ident in tree.annotations if "type" in tree.annotations[ident]}
+            fun_type = tree.get_layer_annotation("types",fun_identifier,"fun_type")
 
-            if fun_identifier not in fun_types:
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for function {fun_identifier} is not defined")
+            if fun_type is None:
+                raise TypeError(f"{tree.meta.line}:{tree.meta.column}:"
+                                f" Function {fun_identifier} has no defined type")
 
-            expected_arg_types = fun_types[fun_identifier][:-1]
+            expected_arg_types = fun_type[:-1]
             arg_names = [child.value for child in tree.children[1:-1]]
 
             if len(expected_arg_types) != len(arg_names):
