@@ -25,6 +25,22 @@ class LayerImplWrapper:
         sys.modules[module_name] = self.module
         spec.loader.exec_module(self.module)
 
-        self.depends_on = getattr(self.module, "depends_on")
-        self.typecheck = getattr(self.module, "typecheck")
-        self.parse_type = getattr(self.module, "parse_type")
+        if hasattr(self.module, "depends_on"):
+            self.depends_on = getattr(self.module, "depends_on")
+        else:
+            self.depends_on = (lambda: set())
+
+        if hasattr(self.module, "typecheck"):
+            self.typecheck = getattr(self.module, "typecheck")
+        else:
+            self.typecheck = (lambda tree: tree)
+
+        if hasattr(self.module, "parse_type"):
+            self.parse_type = getattr(self.module, "parse_type")
+        else:
+            self.parse_type = (lambda string: string)
+
+        if hasattr(self.module, "run_before"):
+            self.run_before = getattr(self.module, "run_before")
+        else:
+            self.run_before = (lambda: set())

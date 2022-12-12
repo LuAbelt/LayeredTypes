@@ -61,9 +61,16 @@ class LayeredCompiler:
 
         for layer_id in lv.layers:
             self.layers[layer_id] = LayerImplWrapper(self.layer_base_dir, lv.layers[layer_id])
+
             required_layers = self.layers[layer_id].depends_on()
-            implicit_layers.update(required_layers - set(lv.layers.keys()))
             layer_graph[layer_id] = required_layers
+            implicit_layers.update(required_layers - set(lv.layers.keys()))
+
+            required_layers = self.layers[layer_id].run_before()
+            for layer in required_layers:
+                layer_graph[layer].add(layer_id)
+
+            implicit_layers.update(required_layers - set(lv.layers.keys()))
 
         while len(implicit_layers) > 0:
             layer_id = implicit_layers.pop()
@@ -71,8 +78,13 @@ class LayeredCompiler:
                 warn(f"Layer {layer_id} was not loaded during CollectLayers, but is required by at least one other layer. Loading it now.")
                 self.layers[layer_id] = LayerImplWrapper(self.layer_base_dir, Layer(layer_id))
                 required_layers = self.layers[layer_id].depends_on()
-                implicit_layers.update(required_layers - set(self.layers.keys()))
                 layer_graph[layer_id] = required_layers
+                implicit_layers.update(required_layers - set(self.layers.keys()))
+
+                required_layers = self.layers[layer_id].run_before()
+                for layer in required_layers:
+                    layer_graph[layer].add(layer_id)
+                implicit_layers.update(required_layers - set(lv.layers.keys()))
 
         # Check for cycles
         try:
