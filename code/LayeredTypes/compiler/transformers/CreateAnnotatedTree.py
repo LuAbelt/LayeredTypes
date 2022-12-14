@@ -20,7 +20,7 @@ class AnnotatedTree(lark.Tree):
     def add_layer_annotation(self, layer_identifier: str, identifier: str, key: str, value):
         if layer_identifier not in self.__annotations:
             self.__annotations[layer_identifier] = dict()
-        if identifier not in self.__annotations:
+        if identifier not in self.__annotations[layer_identifier]:
             self.__annotations[layer_identifier][identifier] = dict()
 
         self.__annotations[layer_identifier][identifier][key] = value
@@ -34,7 +34,11 @@ class AnnotatedTree(lark.Tree):
     def get_layer_annotation(self, layer_id: str, identifier: str, key: str):
         if layer_id not in self.__annotations:
             return None
+
         if identifier not in self.__annotations[layer_id]:
+            return None
+
+        if key not in self.__annotations[layer_id][identifier]:
             return None
 
         return self.__annotations[layer_id][identifier][key]
