@@ -15,9 +15,7 @@ def parse_file(file_path):
 
     return tree
 
-def get_compiler():
-    impl_path = full_path("/implementations.py")
-    layer_path = full_path("/layer_implementations")
+def get_compiler(impl_path = full_path("/implementations.py"), layer_path = full_path("/layer_implementations")):
     compiler = LayeredCompiler(impl_path, layer_path)
 
     return compiler

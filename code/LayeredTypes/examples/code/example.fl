@@ -1,0 +1,50 @@
+-- TODO: Create a motivating example consisting of three layers:
+-- 1. Types Layer for annotating types to variables and functions
+-- 2. Type Checking Layer -- Depends on the types layer
+-- 3. Linear type system that tracks the usage of variables -- This layer is independent of the other two layers
+
+-- Example scenario:
+-- We open a file and read it line by line
+-- We want to keep track of the line number and the line itself
+-- We assume that each line represents a number
+-- If the line is a positive number, we want to add it to a sum
+-- If the line is a negative number, we want to add it's square to a sum
+processLines lines idx length {
+    end := idx == length
+    if (end) {
+        0
+    } else {
+        -- getLine externally defined in python
+        curLine := getLine(lines, idx)
+        -- Convert the line to an integer
+        number := strToInt(curLine)
+        -- If the number is positive, we add it to the sum
+        if (number > 0) {
+            number + processLines(lines, idx + 1, length)
+        } else {
+            -- If the number is negative, we add it's square to the sum
+            (number * number) + processLines(lines, idx + 1, length)
+        }
+    }
+}
+
+processLines lines {
+    -- We use the external len function from python
+    length := len(lines)
+    idx := 0
+    processLines(lines, idx, length)
+}
+
+fileName = "numbers.txt"
+rm := "r"
+
+fileHandle = open(fileName,rm)
+
+-- We use the externally defined readline
+lines := readlines(fileHandle)
+
+close(fileHandle)
+
+total := processLines(lines)
+
+print(total)
