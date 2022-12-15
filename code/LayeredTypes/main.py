@@ -24,8 +24,17 @@ if __name__ == "__main__":
 
     compiler = LayeredCompiler(os.path.abspath(options.impls), os.path.abspath(options.layers))
 
-    if options.typecheck:
-        compiler.typecheck(options.filename)
-    else:
-        result = compiler.run(options.filename)
-        print(f"Program returned: {result}")
+    cwd = os.getcwd()
+
+    file = os.path.abspath(options.filename)
+    os.chdir(os.path.dirname(os.path.abspath(options.filename)))
+
+    try:
+        if options.typecheck:
+            compiler.typecheck(file)
+        else:
+            result = compiler.run(file)
+            print(f"Program returned: {result}")
+    finally:
+        os.chdir(cwd)
+

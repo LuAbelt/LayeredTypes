@@ -9,9 +9,9 @@
 -- We assume that each line represents a number
 -- If the line is a positive number, we want to add it to a sum
 -- If the line is a negative number, we want to add it's square to a sum
-processLines lines idx length {
+processLine lines idx length {
     end := idx == length
-    if (end) {
+    if end then {
         0
     } else {
         -- getLine externally defined in python
@@ -19,11 +19,12 @@ processLines lines idx length {
         -- Convert the line to an integer
         number := strToInt(curLine)
         -- If the number is positive, we add it to the sum
-        if (number > 0) {
-            number + processLines(lines, idx + 1, length)
+        greaterThanZero := number > 0
+        if greaterThanZero then {
+            number + processLine(lines, idx + 1, length)
         } else {
             -- If the number is negative, we add it's square to the sum
-            (number * number) + processLines(lines, idx + 1, length)
+            (number * number) + processLine(lines, idx + 1, length)
         }
     }
 }
@@ -32,18 +33,17 @@ processLines lines {
     -- We use the external len function from python
     length := len(lines)
     idx := 0
-    processLines(lines, idx, length)
+    processLine(lines, idx, length)
 }
 
-fileName = "numbers.txt"
-rm := "r"
+fileName := "numbers.txt"
 
-fileHandle = open(fileName,rm)
+fileHandle := openFile(fileName)
 
 -- We use the externally defined readline
 lines := readlines(fileHandle)
 
-close(fileHandle)
+closeFile(fileHandle)
 
 total := processLines(lines)
 

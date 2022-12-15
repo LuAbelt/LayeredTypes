@@ -123,7 +123,10 @@ class SimpleInterpreter(lark.visitors.Interpreter):
 
         if not fun_id in self.functions.keys():
             if getattr(self.external_functions, fun_id, None):
-                return getattr(self.external_functions, fun_id)(*fun_args)
+                try:
+                    return getattr(self.external_functions, fun_id)(*fun_args)
+                except:
+                    raise RuntimeError(f"Error calling external function '{fun_id}'")
             raise RuntimeError(f"Function '{fun_id}' not defined")
 
         fun_def = self.functions[fun_id]
@@ -178,6 +181,7 @@ class SimpleInterpreter(lark.visitors.Interpreter):
     def custom_expr(self, tree):
         expr_str = tree.children[0].value
         print("Custom expression: {}".format(expr_str))
+        return expr_str.strip("\"'")
 
     def layer(self, tree):
         pass
