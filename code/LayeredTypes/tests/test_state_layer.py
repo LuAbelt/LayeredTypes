@@ -3,7 +3,7 @@ import unittest
 from layer_implementations.state import ArgumentState
 
 class StateLayer(unittest.TestCase):
-    def test_something(self):
+    def test_simple_state_add(self):
         self.assertEqual(True, False)  # add assertion here
 
 class ArgumentStateParsing(unittest.TestCase):

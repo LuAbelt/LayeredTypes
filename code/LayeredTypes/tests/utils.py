@@ -16,6 +16,14 @@ def parse_file(file_path):
     return tree
 
 def get_compiler(impl_path = full_path("/implementations.py"), layer_path = full_path("/layer_implementations")):
-    compiler = LayeredCompiler(impl_path, layer_path)
+    compiler = LayeredCompiler(layer_path, impl_path)
 
     return compiler
+
+def typecheck_correct_file(test, file_path, layers_path = "/../layer_implementations"):
+    compiler = get_compiler(layer_path = full_path(layers_path))
+    src_file = full_path(file_path)
+
+    compiler.typecheck(src_file)
+    # We don't need to do anything here, just make sure it does not throw an exception
+    test.assertTrue(True)

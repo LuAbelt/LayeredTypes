@@ -7,22 +7,26 @@ import sys
 FunctionDefinition = namedtuple("FunctionDefinition", ["name", "args", "body"])
 
 class SimpleInterpreter(lark.visitors.Interpreter):
-    def __init__(self, implementation_file = "implementations"):
+    def __init__(self, implementation_file = None):
         # Variables and functions are stored in dictionaries for access by our interpreter
         self.variables = dict()
         self.functions = dict()
 
-        impl_path = Path(implementation_file)
-        if not impl_path.is_file():
-            raise FileNotFoundError(f"No implementation file (tried to load file '{implementation_file}') found")
+        # Load external functions from implementation file
+        if implementation_file:
+            impl_path = Path(implementation_file)
+            if not impl_path.is_file():
+                raise FileNotFoundError(f"No implementation file (tried to load file '{implementation_file}') found")
 
-        module_name = "implementations"
-        spec = importlib.util.spec_from_file_location(module_name, impl_path)
-        self.external_functions = importlib.util.module_from_spec(spec)
-        sys.modules[module_name] = self.external_functions
-        spec.loader.exec_module(self.external_functions)
+            module_name = "implementations"
+            spec = importlib.util.spec_from_file_location(module_name, impl_path)
+            self.external_functions = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = self.external_functions
+            spec.loader.exec_module(self.external_functions)
 
-        self.external_functions_names = [name for name in dir(self.external_functions) if callable(getattr(self.external_functions, name))]
+            self.external_functions_names = [name for name in dir(self.external_functions) if callable(getattr(self.external_functions, name))]
+        else:
+            self.external_functions_names = []
 
         super().__init__()
 

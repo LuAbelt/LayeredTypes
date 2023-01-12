@@ -16,15 +16,16 @@ from compiler.transformers.CreateAnnotatedTree import CreateAnnotatedTree as Ann
 from compiler.Interpreters import SimpleInterpreter
 
 class LayeredCompiler:
-    def __init__(self
-                 , implementations_file
-                 , layer_base_dir):
+    def __init__(self, layer_base_dir, implementations_file=None):
 
-        self.implementations_file = Path(implementations_file)
         self.layer_base_dir = Path(layer_base_dir)
 
-        if not self.implementations_file.is_file():
-            raise FileNotFoundError(f"Could not find implementations file at {self.implementations_file}")
+        if implementations_file is None:
+            self.implementations_file = None
+        else:
+            self.implementations_file = Path(implementations_file)
+            if not self.implementations_file.is_file():
+                raise FileNotFoundError(f"Could not find implementations file at {self.implementations_file}")
 
         if not self.layer_base_dir.is_dir():
             raise FileNotFoundError(f"Could not find layer base directory at {self.layer_base_dir}")

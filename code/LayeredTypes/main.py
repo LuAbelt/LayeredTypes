@@ -22,7 +22,7 @@ if __name__ == "__main__":
     if options.layers is None:
         parser.error("No layers directory given")
 
-    compiler = LayeredCompiler(os.path.abspath(options.impls), os.path.abspath(options.layers))
+    compiler = LayeredCompiler(os.path.abspath(options.layers), os.path.abspath(options.impls))
 
     cwd = os.getcwd()
 
