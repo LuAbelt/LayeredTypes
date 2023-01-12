@@ -51,6 +51,9 @@ class StateLayer(unittest.TestCase):
     def test_function_transition_state(self):
         typecheck_correct_file(self, "/test_code/state/function_transition_state.fl")
 
+    def test_function_def_argument_state(self):
+        typecheck_correct_file(self, "/test_code/state/function_def_argument_state.fl")
+
 class ArgumentStateParsing(unittest.TestCase):
     def assertEmpty(self, l):
         self.assertEqual(len(l), 0)

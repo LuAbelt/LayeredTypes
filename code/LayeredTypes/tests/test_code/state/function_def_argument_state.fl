@@ -1,0 +1,16 @@
+-- The first argument of f needs state "Some"
+f :: state :: {Some} -> {}
+f first {
+    first :: state :: {Some}
+    first
+}
+
+var := 1
+-- Assign state "Some" to var
+var :: state :: {=>Some}
+
+-- Call f with var as argument
+f(var)
+
+-- var still has state "Some"
+var :: state :: {Some}
