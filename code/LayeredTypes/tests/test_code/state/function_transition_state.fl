@@ -1,0 +1,12 @@
+-- Function f takes something of state "Some" and transitions it to state "Other"
+f :: state :: {Some=>Other} -> {}
+
+var := 1
+
+-- Assign state "Some" to variable "var"
+var :: state :: {=>Some}
+
+f(var)
+
+-- Check that var now has state "Other"
+var :: state :: {Other}

@@ -1,0 +1,7 @@
+-- Function f returns something with state "Some"
+f :: state :: {} -> {Some}
+
+var := f()
+
+-- Assert that var has state "Some"
+var :: state :: {Some}

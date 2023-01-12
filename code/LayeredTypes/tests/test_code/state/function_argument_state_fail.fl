@@ -1,0 +1,7 @@
+-- Function f requires the argument to have state "Some"
+f :: state :: {Some} -> {}
+
+var := 1
+
+-- This fails because the state of var does not contain "Some"
+f(var)
