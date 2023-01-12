@@ -1,0 +1,14 @@
+-- Define a state for first in the outer scope
+first :: state :: {=>Some}
+
+-- Define a function f that takes an argument with state "Other"
+f :: state :: {Other} -> {}
+
+-- Function definition for f with first argument named "first"
+f first {
+    -- Ensure that first now has state Other
+    first :: state :: {Other}
+}
+
+-- Ensure that first now has state Some
+first :: state :: {Some}

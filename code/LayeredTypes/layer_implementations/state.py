@@ -103,7 +103,37 @@ class StateLayer(lark.visitors.Interpreter):
         self.__states[tree.children[0].children[0].value] = self.visit(tree.children[1])
 
     def fun_def(self, tree):
-        raise NotImplementedError()
+        fun_identifier = tree.children[0].value
+
+        arg_names = [child.value for child in tree.children[1:-1]]
+        # Check if the function has a state definition
+
+        # We need to restore the states after the function definition
+        old_states = self.__states.copy()
+        old_function_states = self.__function_states.copy()
+
+        # We reset the states to the default values
+        self.__states = defaultdict(set)
+
+        if fun_identifier in self.__function_states:
+            # Check that the number of arguments matches
+            if len(arg_names) != len(self.__function_states[fun_identifier]) - 1:
+                raise TypeError(
+                    f"{tree.meta.line}:{tree.meta.column}: Function {fun_identifier} was defined with a different number of arguments than the state definition.")
+
+            # Add the states of the arguments to the function definition
+            for i, arg in enumerate(arg_names):
+                self.__states[arg] = self.__function_states[fun_identifier][i].required_states
+
+        # Visit the function body
+        self.visit(tree.children[-1])
+
+        # Restore the old states
+        self.__states = old_states.copy()
+        self.__function_states = old_function_states.copy()
+
+    def block(self, tree):
+        return self.visit_children(tree)
 
     def __default__(self, tree):
         self.visit_children(tree)

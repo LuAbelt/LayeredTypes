@@ -54,6 +54,16 @@ class StateLayer(unittest.TestCase):
     def test_function_def_argument_state(self):
         typecheck_correct_file(self, "/test_code/state/function_def_argument_state.fl")
 
+    def test_function_def_shadows_outer_state(self):
+        typecheck_correct_file(self, "/test_code/state/function_def_shadows_outer_state.fl")
+
+    def test_function_def_shadows_outer_state_fail(self):
+        compiler = get_compiler(layer_path=full_path("/../layer_implementations"))
+        src_file = full_path("/test_code/state/function_def_shadows_outer_state_fail.fl")
+
+        with self.assertRaises(TypeError) as context:
+            compiler.typecheck(src_file)
+
 class ArgumentStateParsing(unittest.TestCase):
     def assertEmpty(self, l):
         self.assertEqual(len(l), 0)
