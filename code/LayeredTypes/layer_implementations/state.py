@@ -84,13 +84,13 @@ class StateLayer(lark.visitors.Interpreter):
             return set()
 
         # Check that each argument has the required states
-        for i, arg in enumerate(tree.children[1:-1]):
+        for i, arg in enumerate(tree.children[1:]):
             if not self.__function_states[fun_identifier][i].check_required_states(self.visit(arg)):
                 raise TypeError(
                     f"{tree.meta.line}:{tree.meta.column}: Function {fun_identifier} was called with invalid state for argument {i}.")
 
         # Apply the state transitions
-        for i, arg in enumerate(tree.children[1:-1]):
+        for i, arg in enumerate(tree.children[1:]):
             self.__function_states[fun_identifier][i].apply_state_transitions(self.visit(arg))
 
         # Return the states of the last argument which corresponds to the return value

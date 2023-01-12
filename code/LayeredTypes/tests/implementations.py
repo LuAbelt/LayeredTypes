@@ -15,3 +15,6 @@ def twoArgs(first, second):
 
 def threeArgs(first, second, third):
     return [first, second, third]
+
+def f():
+    pass
