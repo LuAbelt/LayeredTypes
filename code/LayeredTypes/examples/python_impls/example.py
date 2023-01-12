@@ -14,5 +14,5 @@ def getLine(lines:list, i:int) -> str:
     return lines[i]
 
 # Create a function that takes an open filehandle and returns a list of lines
-def readlines(filehandle) -> list:
+def readLines(filehandle) -> list:
     return filehandle.readlines()

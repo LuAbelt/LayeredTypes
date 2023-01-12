@@ -210,6 +210,9 @@ def typecheck(tree):
             if len(tree.children) > 2:
                 self.visit(tree.children[2])
 
+        def custom_expr(self, tree):
+            # Temporary workaround until proper custom expression support is added
+            return "string"
 
     typechecker = Typechecker()
 

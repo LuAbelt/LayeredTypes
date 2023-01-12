@@ -180,7 +180,7 @@ class SimpleInterpreter(lark.visitors.Interpreter):
 
     def custom_expr(self, tree):
         expr_str = tree.children[0].value
-        print("Custom expression: {}".format(expr_str))
+        # print("Custom expression: {}".format(expr_str))
         return expr_str.strip("\"'")
 
     def layer(self, tree):
