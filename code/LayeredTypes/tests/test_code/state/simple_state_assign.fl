@@ -1,0 +1,12 @@
+-- Test that checks that states are correctly copied when assigning variables
+
+var := 1
+var :: state :: {=>Some}
+-- Assert that var has state Some
+var :: state :: {Some}
+
+other := var
+-- Assert that other has state Some
+other :: state :: {Some}
+-- Assert that var has state Some
+var :: state :: {Some}

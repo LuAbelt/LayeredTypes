@@ -1,0 +1,6 @@
+var := 1
+
+-- We define a state transition for var to have the state "Some"
+var :: state :: {=>Some}
+-- Ensure that var now has the state "Some"
+var :: state :: {Some}

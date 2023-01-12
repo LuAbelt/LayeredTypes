@@ -1,0 +1,5 @@
+var := 1
+var :: state :: {Other}
+-- Define a state transition from "Some" to "Other" for var
+-- This should fail as var is not in state "Some"
+var :: state :: {Some => Other}

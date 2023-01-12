@@ -1,0 +1,11 @@
+var := 1
+
+-- We define a state transition for var to have the state "Some"
+var :: state :: {=>Some}
+-- Ensure that var now has the state "Some"
+var :: state :: {Some}
+-- Transition var to remove the state "Some"
+var :: state :: {Some=>}
+
+-- This now causes the state layer to fail
+var :: state :: {Some}

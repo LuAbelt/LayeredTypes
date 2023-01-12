@@ -1,0 +1,7 @@
+-- This test ensures that states are transitioned correctly by the state layer
+var := 1
+
+var :: state :: {=>Some}
+var :: state :: {Some=>Other}
+-- Assert that var now has the state "Other"
+var :: state :: {Other}
