@@ -31,7 +31,7 @@ class ArgumentState:
 
     def add_state_transition(self, before, after):
         self.state_transitions.add((before, after))
-        self.required_states.add(before)
+        self.required_states.add(before) if before else None
 
     def check_required_states(self, states):
         return self.required_states.issubset(states)
@@ -62,12 +62,12 @@ class StateLayer(lark.visitors.Interpreter):
         if layer_name != "state":
             return tree
 
-        states = [t.strip for t in tree.children[2].value.split("->")]
+        states = [t.strip() for t in tree.children[2].value.split("->")]
 
         if len(states) == 1:
             # State definition for a identifier
             # That case can be used to check that a variable has a specific state or manually define a transition
-            arg_state = self.ArgumentState(states[0])
+            arg_state = ArgumentState(states[0])
             if not arg_state.check_required_states(self.__states[identifier]):
                 raise TypeError(
                     f"{tree.meta.line}:{tree.meta.column}: Identifier {identifier} does not have the required state.")
@@ -75,7 +75,7 @@ class StateLayer(lark.visitors.Interpreter):
 
         else:
             # This is a definition for a function
-            self.__function_states[identifier] = [self.ArgumentState(s) for s in states]
+            self.__function_states[identifier] = [ArgumentState(s) for s in states]
 
     def fun_call(self, tree):
         fun_identifier = tree.children[0].value
@@ -97,16 +97,21 @@ class StateLayer(lark.visitors.Interpreter):
         return self.__function_states[fun_identifier][-1].required_states
 
     def ident(self, tree):
-        return self.__states[tree.children[0].value] if tree.value in self.__states else set()
+        return self.__states[tree.children[0].value] if tree.children[0].value in self.__states else set()
 
     def assign(self, tree):
-        self.__states[tree.children[0].value] = self.visit(tree.children[1])
+        self.__states[tree.children[0].children[0].value] = self.visit(tree.children[1])
 
     def fun_def(self, tree):
         raise NotImplementedError()
 
     def __default__(self, tree):
+        self.visit_children(tree)
         return set()
 
 def typecheck(tree):
-    pass
+    state_checker = StateLayer()
+
+    state_checker.visit(tree)
+
+    return tree

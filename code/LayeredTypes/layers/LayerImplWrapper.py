@@ -27,5 +27,5 @@ class LayerImplWrapper:
 
         self.depends_on = getattr(self.module, "depends_on", lambda : set())
         self.typecheck = getattr(self.module, "typecheck")
-        self.parse_type = getattr(self.module, "parse_type")
+        self.parse_type = getattr(self.module, "parse_type", lambda x: x)
         self.run_before = getattr(self.module, "run_before", lambda : set())

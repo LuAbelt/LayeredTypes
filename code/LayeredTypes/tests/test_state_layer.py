@@ -1,10 +1,39 @@
 import unittest
 
 from layer_implementations.state import ArgumentState
+from tests.utils import typecheck_correct_file, get_compiler, full_path
+
 
 class StateLayer(unittest.TestCase):
     def test_simple_state_add(self):
-        self.assertEqual(True, False)  # add assertion here
+        typecheck_correct_file(self, "/test_code/state/simple_state_add.fl")
+
+    def test_simple_state_remove(self):
+        compiler = get_compiler(layer_path=full_path("/../layer_implementations"))
+        src_file = full_path("/test_code/state/simple_state_remove.fl")
+
+        with self.assertRaises(TypeError) as context:
+            compiler.typecheck(src_file)
+
+    def test_simple_state_assign(self):
+        typecheck_correct_file(self, "/test_code/state/simple_state_assign.fl")
+
+    def test_state_transition_success(self):
+        typecheck_correct_file(self, "/test_code/state/state_transition_success.fl")
+
+    def test_state_transition_failure(self):
+        compiler = get_compiler(layer_path=full_path("/../layer_implementations"))
+        src_file = full_path("/test_code/state/state_transition_fail.fl")
+
+        with self.assertRaises(TypeError) as context:
+            compiler.typecheck(src_file)
+
+    def test_state_transition_no_before(self):
+        compiler = get_compiler(layer_path=full_path("/../layer_implementations"))
+        src_file = full_path("/test_code/state/state_transition_no_before.fl")
+
+        with self.assertRaises(TypeError) as context:
+            compiler.typecheck(src_file)
 
 class ArgumentStateParsing(unittest.TestCase):
     def assertEmpty(self, l):
