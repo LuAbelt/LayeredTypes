@@ -1,7 +1,10 @@
 import re
 from collections import defaultdict
+from copy import copy
 
 import lark.visitors
+
+from compiler.transformers.CreateAnnotatedTree import AnnotatedTree
 
 
 class ArgumentState:
@@ -26,6 +29,11 @@ class ArgumentState:
             else:
                 self.required_states.add(part.strip()) if part.strip() else None
 
+    def __copy__(self):
+        new = ArgumentState("{}")
+        new.required_states = self.required_states.copy()
+        new.state_transitions = self.state_transitions.copy()
+        return new
     def add_required_state(self, state):
         self.required_states.add(state)
 
@@ -55,6 +63,16 @@ class StateLayer(lark.visitors.Interpreter):
         self.__states = defaultdict(set)
         self.__function_states = dict()
 
+    def __annotate_states(self, tree):
+        if not isinstance(tree, AnnotatedTree):
+            tree = AnnotatedTree(tree)
+
+        for identifier in self.__states:
+            tree.add_layer_annotation("state", identifier, "state", self.__states[identifier])
+
+        for fun_identifier in self.__function_states:
+            tree.add_layer_annotation("state",fun_identifier, "function_state",self.__function_states[fun_identifier])
+
     def layer(self, tree):
         identifier = tree.children[0].children[0].value
         layer_name = tree.children[1].children[0].value
@@ -68,10 +86,15 @@ class StateLayer(lark.visitors.Interpreter):
             # State definition for a identifier
             # That case can be used to check that a variable has a specific state or manually define a transition
             arg_state = ArgumentState(states[0])
-            if not arg_state.check_required_states(self.__states[identifier]):
+            state = tree.get_layer_annotation("state",identifier,"state")
+            if state is None:
+                state = set()
+            if not arg_state.check_required_states(state):
                 raise TypeError(
                     f"{tree.meta.line}:{tree.meta.column}: Identifier {identifier} does not have the required state.")
-            arg_state.apply_state_transitions(self.__states[identifier])
+            state = copy(state)
+            arg_state.apply_state_transitions(state)
+            self.__states[identifier] = state
 
         else:
             # This is a definition for a function
@@ -91,13 +114,19 @@ class StateLayer(lark.visitors.Interpreter):
 
         # Apply the state transitions
         for i, arg in enumerate(tree.children[1:]):
-            self.__function_states[fun_identifier][i].apply_state_transitions(self.visit(arg))
+            new_state = copy(self.visit(arg))
+            self.__function_states[fun_identifier][i].apply_state_transitions(new_state)
+            # If the argument is an identifier, we need to update the state
+            if isinstance(arg, AnnotatedTree) and arg.data == "ident":
+                self.__states[arg.children[0].value] = new_state
 
         # Return the states of the last argument which corresponds to the return value
         return self.__function_states[fun_identifier][-1].required_states
 
     def ident(self, tree):
-        return self.__states[tree.children[0].value] if tree.children[0].value in self.__states else set()
+        identifier = tree.children[0].value
+        state = tree.get_layer_annotation("state",identifier,"state")
+        return state if state else set()
 
     def assign(self, tree):
         self.__states[tree.children[0].children[0].value] = self.visit(tree.children[1])
@@ -138,6 +167,10 @@ class StateLayer(lark.visitors.Interpreter):
     def __default__(self, tree):
         self.visit_children(tree)
         return set()
+
+    def _visit_tree(self, tree):
+        self.__annotate_states(tree)
+        return super()._visit_tree(tree)
 
 def typecheck(tree):
     state_checker = StateLayer()

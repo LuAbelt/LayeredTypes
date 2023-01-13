@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Optional
 
 import lark
@@ -15,7 +16,7 @@ class AnnotatedTree(lark.Tree):
             self.__annotations[layer_identifier] = dict()
         if identifier not in self.__annotations:
             self.__annotations[layer_identifier][identifier] = dict()
-        self.__annotations[layer_identifier][identifier].update(values)
+        self.__annotations[layer_identifier][identifier].update(copy(values))
 
     def add_layer_annotation(self, layer_identifier: str, identifier: str, key: str, value):
         if layer_identifier not in self.__annotations:
@@ -23,7 +24,7 @@ class AnnotatedTree(lark.Tree):
         if identifier not in self.__annotations[layer_identifier]:
             self.__annotations[layer_identifier][identifier] = dict()
 
-        self.__annotations[layer_identifier][identifier][key] = value
+        self.__annotations[layer_identifier][identifier][key] = copy(value)
 
     def get_all_layer_annotations(self, layer_id: str, identifier: str):
         if layer_id not in self.__annotations:

@@ -14,7 +14,7 @@ def typecheck(tree):
 
         def __annotate_types(self, tree):
             if not isinstance(tree, AnnotatedTree):
-                return
+                tree = AnnotatedTree(tree)
 
             for var_type in self.variable_types:
                 tree.add_layer_annotation("types",var_type,"type",self.variable_types[var_type])
