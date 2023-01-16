@@ -98,6 +98,9 @@ class StateLayer(lark.visitors.Interpreter):
 
         else:
             # This is a definition for a function
+            # Special handling for functions without arguments:
+            if len(states) == 2 and states[0] == "":
+                states = states[1:]
             self.__function_states[identifier] = [ArgumentState(s) for s in states]
 
     def fun_call(self, tree):
@@ -105,6 +108,11 @@ class StateLayer(lark.visitors.Interpreter):
 
         if fun_identifier not in self.__function_states:
             return set()
+
+        # Check that the number of arguments matches
+        if len(tree.children[1:]) != len(self.__function_states[fun_identifier]) - 1:
+            raise TypeError(
+                f"{tree.meta.line}:{tree.meta.column}: Function {fun_identifier} expects {len(self.__function_states[fun_identifier]) - 1} arguments but got {len(tree.children[1:])}")
 
         # Check that each argument has the required states
         for i, arg in enumerate(tree.children[1:]):

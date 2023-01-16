@@ -1,5 +1,5 @@
 -- Function f returns something with state "Some"
-f :: state :: {} -> {Some}
+f :: state ::  -> {Some}
 
 var := f()
 
