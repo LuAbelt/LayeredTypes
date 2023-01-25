@@ -1,9 +1,3 @@
--- TODO: Create a motivating example consisting of three layers:
--- 1. Types Layer for annotating types to variables and functions
--- 2. Type Checking Layer -- Depends on the types layer
--- 3. Linear type system that tracks the usage of variables -- This layer is independent of the other two layers
--- Alternatively, the third layer could be a "state" layer that can be used to define states on variables and how function calls change this state
-
 -- Example scenario:
 -- We open a file and read it line by line
 -- We want to keep track of the line number and the line itself
@@ -16,7 +10,8 @@ getLine :: types :: [string] -> int -> string
 strToInt :: types :: string -> int
 
 len :: types :: [string] -> int
-openFile :: types :: string -> FileHandle
+createFD :: types :: string -> FileHandle
+openFile :: types :: FileHandle -> FileHandle
 readLines :: types :: FileHandle -> [string]
 closeFile :: types :: FileHandle -> void
 print :: types :: Any -> void
@@ -39,11 +34,12 @@ subtype :: typecheck :: string <: Any
 
 -- Layer definitions could look as following:
 -- openFile takes something without a state and returns something with state "Open"
--- openFile :: state :: {} -> {Open}
+createFD :: state :: {} -> { Closed }
+openFile :: state :: {Closed => Open} -> {}
 -- readLines takes something with state "Open" and returns something with state "Consumed"
--- readLines :: state :: {Open => Consumed} -> {}
+readLines :: state :: {Open => Consumed} -> {}
 -- closeFile takes something with state "Consumed" and returns something with state "Closed"
--- closeFile :: state :: {Consumed => Closed} -> {}
+closeFile :: state :: {Consumed => Closed} -> {}
 
 -- Recursive process line that is called in order to process each line
 processLine :: types :: [string] -> int -> int -> int
@@ -92,15 +88,17 @@ processLines lines {
 fileName :: types :: string
 fileName := "numbers.data"
 
+fileDescriptor :: types :: FileHandle
+fileDescriptor := createFD(fileName)
+
 -- We use the external readFile function from python
-fileHandle :: types :: FileHandle
-fileHandle := openFile(fileName)
+openFile(fileDescriptor)
 
 -- We use the externally defined readline
 lines :: types :: [string]
-lines := readLines(fileHandle)
+lines := readLines(fileDescriptor)
 
-closeFile(fileHandle)
+closeFile(fileDescriptor)
 
 total :: types :: int
 total := processLines(lines)
@@ -110,4 +108,4 @@ total
 
 -- State post-conditions
 -- The file handle is closed after the program has finished
-fileHandle :: state :: {Closed}
+fileDescriptor :: state :: {Closed}

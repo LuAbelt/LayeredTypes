@@ -8,9 +8,6 @@ from compiler.transformers.CreateAnnotatedTree import AnnotatedTree
 
 
 class ArgumentState:
-    def __init__(self):
-        self.required_states = set()
-        self.state_transitions = set()
 
     def __init__(self, state: str):
         self.required_states = set()
@@ -65,7 +62,7 @@ class StateLayer(lark.visitors.Interpreter):
 
     def __annotate_states(self, tree):
         if not isinstance(tree, AnnotatedTree):
-            tree = AnnotatedTree(tree)
+            tree = AnnotatedTree(tree.data, tree.children, tree.meta)
 
         for identifier in self.__states:
             tree.add_layer_annotation("state", identifier, "state", self.__states[identifier])

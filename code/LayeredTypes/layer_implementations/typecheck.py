@@ -10,17 +10,6 @@ def depends_on():
 def typecheck(tree):
     class Typechecker(lark.visitors.Interpreter):
         def __init__(self):
-            self.__convertable_types = {
-                "int" : {"long"},
-                "short" : {"int", "long"},
-                "long" : set(),
-                "byte" : {"short", "int", "long"},
-                "float" : {"double"},
-                "double" : set(),
-                "bool" : set(),
-                "str" : set()
-            }
-
             self.__subtype_graph = igraph.Graph(2, directed=True)
             self.__type_ids = {"__num":0,"__logical":1}
 
@@ -45,6 +34,10 @@ def typecheck(tree):
             # Special handling for assignment of num literals
             if t1 == "__num":
                 return self.__is_convertable(t2, "__num")
+
+            # Special handling for assignment of logical literals
+            if t1 == "__logical":
+                return self.__is_convertable(t2, "__logical")
 
             if t1 not in self.__type_ids or t2 not in self.__type_ids:
                 return False
@@ -123,10 +116,10 @@ def typecheck(tree):
             return "__num"
 
         def true(self, tree):
-            return "bool"
+            return "__logical"
 
         def false(self, tree):
-            return "bool"
+            return "__logical"
 
         def bin_op(self, tree):
             lhs_type = self.visit(tree.children[0])
@@ -145,13 +138,13 @@ def typecheck(tree):
 
             if op in {"==", "!=", "<", ">", "<=", ">="}:
                 if self.__is_convertable(lhs_type, rhs_type) or self.__is_convertable(rhs_type, lhs_type):
-                    return "bool"
+                    return "__logical"
 
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot compare types {lhs_type} and {rhs_type}")
 
             if op in {"&&", "||"}:
-                if lhs_type == "bool" and rhs_type == "bool":
-                    return "bool"
+                if self.__is_convertable(lhs_type, "__logical") and self.__is_convertable(rhs_type, "__logical"):
+                    return "__logical"
 
                 raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot perform logical operation on types {lhs_type} and {rhs_type}")
 

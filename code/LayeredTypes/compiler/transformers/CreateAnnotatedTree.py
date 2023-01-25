@@ -7,8 +7,7 @@ from lark.tree import Meta
 
 class AnnotatedTree(lark.Tree):
     def __init__(self, data: str, children: 'List[Branch[_Leaf_T]]', meta: Optional[Meta] = None):
-        super().__init__(data, children)
-        self._meta = meta
+        super().__init__(data, children, meta)
         self.__annotations = dict()
 
     def update_layer_annotations(self, layer_identifier: str, identifier: str, values: dict):
@@ -28,7 +27,7 @@ class AnnotatedTree(lark.Tree):
 
     def get_all_layer_annotations(self, layer_id: str, identifier: str):
         if layer_id not in self.__annotations:
-            return None
+            return {}
 
         return self.__annotations[layer_id][identifier]
 
