@@ -1,0 +1,181 @@
+\section{Example Use-Cases}
+\label{ssec:use_cases}
+For the scope of this paper, we have developed two exemplary use-cases for our framework that demonstrates our layered verification approach. In the first use-case, we defined a simple program that uses multiple different, partly independent type systems. For our second example, we use our framework to present a more flexible approach to using Liquid Types.
+
+\subsection{Use Case 1 -- File Processing}
+\label{sssec:use_case_1}
+
+In our first use case we implemented a small program that processes the contents of a text file. Througout this section we will describe the program and the implemented layers required to realize this program. Lastly we will discuss the findings and benefits we gained from using our layered verification approach.
+
+\subsubsection{Description}
+In our first use-case we design a small program that reads contents from a file and performs certain operations based on that. The base code for our example can be found in Listing \ref{lst:uc1_code}. In our example, the file to be read will contain one number per each line. Depending on whether the number is positive or negative, we add the number as is or the square of the number to the resulting value.
+
+\begin{lstlisting}
+processLine lines idx length {
+    end := idx == length
+
+    if end then {
+        0
+    } else {
+
+        curLine := getLine(lines, idx)
+
+        number := strToInt(curLine)
+
+        greaterThanZero := number > 0
+
+        if greaterThanZero then {
+            number + processLine(lines, idx + 1, length)
+        } else {
+            (number * number) + processLine(lines, idx + 1, length)
+        }
+
+    }
+}
+
+processLines lines {
+    length := len(lines)
+
+    idx := 0
+    processLine(lines, idx, length)
+}
+
+fileName := "numbers.data"
+fileHandle := openFile(fileName)
+lines := readLines(fileHandle)
+closeFile(fileHandle)
+total := processLines(lines)
+
+print(total)
+total
+
+\end{lstlisting}
+
+All functions that have not been defined directly \ref{lst:uc1_code} are provided in a separate, external python file. As our language on itself does not include a type system and there are no layer annotations in the code above, no type checking will be performed on the code as it is presented.
+
+However even this simple example could already introduce several errors that could be prevented by introducing some static analysis. First of all, it does not provide any information about the variable and function type and thus, we cannot ensure that functions are called with arguments of the correct types which might lead to runtime errors.
+
+Additionally we our code interacts with the file it operates on through a file descriptor. TThis file descriptor can be viewed as a resource that might have an implicit or explicit internal state. In a very simple approach this file descriptor could be in the states "Open" or "Closed". In order to read from it, it should be in an "Open" state and additionally we should ensure that by the end of our program the resource has been properly closed again.
+
+In order to improve our example code and allow static analysis, we therefore will introduce three layers:
+\begin{enumerate}
+	\item A \textit{Type} Layer -- This layer will be used to simply define variable and function types
+	\item The \textit{Typechecking} Layer -- This layer will allow to flexibly define a type system and then use the information provided by the \textit{Type} layer to check if the program is well-typed. It therefore depends on the \textit{Type} layer to provide the type information.
+	\item A \textit{State} Layer -- This layer will be used to define states on variables. Additionally it can model state transitions. We will use it to track the state of the file descriptor. This layer operates completely independent from the \textit{Type} and \textit{Typechecking} layer.
+\end{enumerate}
+
+\subsubsection{Implemented Layers}
+In the following sections we will explain in more detail how the layers are implemented and what Syntax they use.
+
+\paragraph{Types Layer}
+The \textit{Types} layer is the first layer that is checked. It is used to define the types of variables and functions. To define the type of a variable we use the \texttt{Layer} syntax of our language. A layer definition for the \textit{Types} layer looks as follows:
+
+\begin{lstlisting}
+identifier :: types :: Type
+\end{lstlisting}
+
+The \texttt{identifier} is the name of the variable or function for which we want to define the type. The \texttt{types} keyword is used to associate this information with the correct layer. The \texttt{Type} is the desired type information to be annotated. There are no restrictions on how a \texttt{Type} should look, as the types layer simply annotates the given string into the current node and does not further process it. For example to define the type of a variable \texttt{foo} as \texttt{int} we would write:
+
+\begin{lstlisting}
+foo :: types :: int
+\end{lstlisting}
+
+In order to define the type of a function, there is a slight adaption to this syntax. While the first two parts are identical to the variable definition, we now need to provide type information for each argument of the function. This is done by using the \texttt{Type} syntax for each argument and then separating them with an arrow symbol \texttt{->}. The return type of the function is then defined by the last \texttt{Type}. If a function does not take an argument the defintion simply starts with the arrow symbol. The following code piece contains an example for a function \texttt{f} that takes two arguments of type \texttt{int} and returns a value of type \texttt{bool}, and a function \texttt{g} that does not take any arguments and returns a value of type \texttt{string}:
+
+\begin{lstlisting}
+f :: types :: int -> int -> bool
+g :: types :: -> string
+\end{lstlisting}
+
+It is important to note that the \textit{Types} layer does not perform any type checking. It simply annotates the given type information into the AST. The \textit{Types} layer only checks for the following inconsistencies:
+
+\begin{itemize}
+	\item The type for a variable can only be defined once in the current scope.
+	\item When encountering a function definition, the type for it needs to be defined before the function signature. Additionally the number of arguments in the function signature needs to match the number of arguments in the type definition.
+\end{itemize}
+
+Any further type checking is performed by the \textit{Typechecking} layer.
+
+\paragraph{Typechecking Layer}
+
+The \textit{Typechecking} layer is used to define a type system and then use the information provided by the \textit{Types} layer to check if the program is well-typed. It therefore depends on the \textit{Types} layer to provide the type information. In our implementation of the type checker, we do not impose any restrictions on the specific type system. We rather provide a generic type checking implementation that allows the user to flexibly define their own types and subtype relationships. However, since our language implicitly natively requires specific expressions to be of a number or boolean type, there are implicitly part of our type system.
+
+To define the specific type system, we use the \texttt{Layer} syntax of our language. However, instead of defining layers for identifiers as in the \textit{Types} layer, we reserve a selected set of keywords to define the type system. Depending on the definition provided by the user, the type checker will internally build a type graph that is used to perform the type checking.
+
+The following keywords are reserved and can be used to define parts of the type system:
+
+\begin{itemize}
+	\item \texttt{logicalTypes} -- This keyword is used to define a set of logical types. Multiple types can be defined by separating them with a space.
+	\item \texttt{numTypes} -- This keyword is used to define a set of numeric types. Multiple types can be defined by separating them with a space.
+	\item \texttt{subtype} -- This keyword is used to define a subtype relationship between two or more types. The syntax for a subtype relationship is \texttt{<type1> <: <type2> <: ... <: <typeN>}. The subtype relationship is then defined by the order of the types. The first type is the supertype and the following type is a subtype of the previous type.
+\end{itemize}
+
+The following code piece is a short demonstration of a type system containing different logical types, numeric types and subtype relationships:
+
+\begin{lstlisting}
+logicalTypes :: typecheck :: bool
+numTypes :: typecheck :: int float
+subtype :: typecheck :: float <: int
+\end{lstlisting}
+
+The type system defined by the user will be used to perform the typechecking. To perform this typecheck the type checker accesses the annotations provided by the \textit{Types} layer. For the case that a type is neither a numeric or logical type and it does not have any subtype relationships, it is not required to explicitly define it in the type system. The type checker will then simply assume the existance of such a type that is not a subtype of any other type nor does it have any subtypes.
+
+Our type checker will perform the following checks:
+
+\begin{itemize}
+	\item The type of each variable needs to be defined.
+	\item When assigning a value to a variable, the type of the value needs to be a subtype of the type of the variable.
+	\item When performing a logical operations (e.g. \texttt{\&\&}, \texttt{||}) the type of the operands needs to be a logical type. The result of the operation will be a logical type.
+	\item When performing a numeric operation (e.g. \texttt{+}, \texttt{-}, \texttt{*}, \texttt{/}) the type of the operands needs to be a numeric type. The result of the operation will be the most general numeric type of the operands.
+	\item When performing a comparison operation (e.g. \texttt{==}, \texttt{!=}, \texttt{<}, \texttt{>}, \texttt{<=}, \texttt{>=}) the type of the operands needs to be compatible. This means that either the right hand side is a subtype of the left hand side or the left hand side is a subtype of the right hand side. The result of such an operation is always a boolean value.
+	\item In an \texttt{if} statement the condition needs to be a logical type.
+	\item When performing a function call, the number of arguments needs to match the number of arguments in the function definition. Additionally the type of each argument needs to be a subtype of the type of the corresponding argument in the function definition.
+\end{itemize}
+
+Since we require the type of each variable to be defined, this means we require full information about the types of all variables. We do not perform any type inference. This is a deliberate design decision, as we want to keep the language as simple as possible. However, by the design of our language, it would be possible to develop an additional layer that runs after the \textit{Types} layer but before the \textit{Typechecking} layer that performs a type inference based on the incomplete information provided.
+
+\paragraph{State Layer}
+
+The \textit{State} layer is used to define states on variables. Similarly, we can use it to check if a variable has a certain state and define state transitions. This can for example be used to track the state of resources that are used by a program. In our implementation, the state of a variable is completely independent of its type, therefore it does not require any dependencies on the \textit{Types} layer.
+
+The state of a variable is defined by a set of strings. Generally there are two ways to check the state of a variable or transition it's state to a new one. Firstly, we can explicitly do this by using a layer statement of the language. Secondly, we can also impose state requirements on arguments of function calls. Then when passing a variable to a function, the layer will check if the variable has the required state and apply the state transition if there are any.
+
+Similar to the \textit{Types} layer, the \textit{State} layer uses the \texttt{Layer} syntax of the language to define the state of a variable. The first part of the layer statement defines the variable or function name to define a state on, while the second part is simply the layer identifier \texttt{state}. The last part of the layer definition defines the state.
+
+A state definition is enclosed by curly brackets and can contain the following parts:
+
+\begin{itemize}
+	\item A state \textit{requirement} -- Imposes a restrition on the current state the variable needs to have. This is simply a string that needs to be part of the current state of the variable.
+	\item A state \textit{transition} -- Defines a transition to a new state. Generally a state transition has the form \texttt{<oldState> => <newState>}. However, either the old or new state may be omitted. When omitting the old state, this simply means that something is added to the current state of the variable unconditionally. When omitting the new state, this means that the corresponding state string will be removed from the set of states.
+\end{itemize}
+
+For our use-case, we want to track the state of the file descriptor. Specifically, we want to make sure, that the file handle is open before we can read from it. Additionally, we do not want to read from a file handle again once it has already been read. Therefore, we define the states \texttt{Open}, \texttt{Consumed} and \texttt{Closed} and define the appropriate state transistions as seen in Listing \ref{lst:uc1_state}. Additionally, at the end of the program, we want to make sure that the file handle is closed. Therefore, we define a state requirement that the file handle needs to be in the state \texttt{Closed}.
+
+\begin{lstlisting}
+createFD :: state :: {} -> { Closed }
+openFile :: state :: {Closed => Open} -> {}
+readLines :: state :: {Open => Consumed} -> {}
+closeFile :: state :: {Consumed => Closed} -> {}
+
+-- State requirement at the end of the program
+fileDescriptor :: state :: {Closed}
+\end{lstlisting}
+
+With these three layers, we have defined the complete type system for this use-case. Using these three layers we can now ensure the following properties of our program statically:
+
+\begin{itemize}
+	\item Our program is type safe. This means that we can be sure that the program will not crash due to type errors.
+	\item Using the state layer, we ensure that the file descriptor is handled correctly and is in a closed state at the end of the program.
+\end{itemize}
+
+\subsubsection{Discussion}
+
+Implementing this first use-case has given us valuable results and insights on our approach. We have successfully implemented three layers independently from each other, however since the \textit{Typecheck} layer depends on the information provided by the \textit{Types} layer, we successfully demonstrated, that information can be communicated between layers. We have also successfully demonstrated that the layers can be used to define a type system for a program. This means that we can use the layers to define a type system for a program and then use the type checker to check if the program is type safe.
+
+Furthermore, as a result of this use-case, we provide an implementation of a state layer. This layer can be used to define states on variables and functions and to check if a variable has a certain state. Additionally, we can use the state layer to define state transitions. This can be used to track the state of resources that are used by a program. We believe that this layer is suitable for a wide range of applications far beyond the simple demonstration we have shown in this use-case.
+
+One shortcoming of our implementation is that we require that the \textit{Types} layer needs to provide full information on the types of all variables and functions. For a developer it would be much more flexible if it would be possible to only provide partial information and use type-inference to deduce the missing information. However, by the design of our framework extending the example to also support type inference is possible. We could for example add a new layer that runs after the \textit{Types} layer but before the \textit{Typecheck} layer. This layer could then perform type inference and annotate the missing information to the AST. This way the \textit{Typecheck} layer would have all the information it needs to perform the type checking. However for the scope of this paper, we have decided not to implement this feature.
+
+\subsection{Use Case 2 -- Liquid Types}
+\label{sssec:use_case_2}
+

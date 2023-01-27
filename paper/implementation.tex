@@ -1,0 +1,89 @@
+\section{Implementation}
+\label{sec:implementation}
+
+In this section we will describe our implementation of a layered typing approach in detail. We will start by describing the simple functional language we will use for our examples. We will then describe how our layered type checker is implemented. Finally, we will showcase how our approach can be used on various simple examples.
+
+\subsection{Language}
+\label{ssec:language}
+
+To demonstrate our layered approach we implemented a simple functional language. The syntax of said language is described in \ref{fig:lang}. The language is similar to most simple functional languages and generally follows the reduction semantics of a standard Hindley-Milner type system. The only data types available in the language are the \texttt{Int} and the \texttt{Bool} type. However, the language does not strictly require the programmer to explicitly specify the type of a variable.
+
+\begin{figure}[ht!]
+\begin{align*}
+	id \in \texttt{Ident}\ 	&::=\ [a...zA...Z]+ \\
+	v \in \texttt{Var}\ 	&::=\ id \\
+	f \in \texttt{Fun}\ 	&::=\ id_1\ ...\ id_n\ \{\ s\ \}\\
+	e \in \texttt{Expr}\ 	&::=\ v\ |\ c\ |\ (\ e\ \circledplus\ e\ )\ |\ (e\ \circleddot\ e)\ |\ f(e)\ |\ f(e_1,\ ...,\ e_n)  \\
+	\texttt{CustomExpr}\ 	&::=\ \texttt{String}\\
+	c \in \texttt{Const}\ 	&::=\ \texttt{True}\ |\ \texttt{False}\ |\ \mathbb{Z} \\
+	\texttt{Assign}\ 	&::=\ v\ :=\ e\ |\ v\ :=\ \texttt{CustomExpr}\ \\
+	s \in \texttt{Stmt}\ 	&::=\ \texttt{Assign}\ |\ \texttt{if}\ v\ \texttt{then}\ \lbrace\ s_1\ \rbrace\ \texttt{else}\ \lbrace\ s_2\ \rbrace\ |\ \texttt{let}\ v\ :=\ e\ \texttt{in}\ \lbrace\ s\ \rbrace\ |\ \ell\ |\ s_1\ s_2\ \\
+	\ell \in \texttt{Layer}\ 	&::=\ id_1::id_2::\texttt{String} \\
+	\circledplus\ 		&::=\ \texttt{+}\ |\ \texttt{-} \\
+	\circleddot\ 		&::=\ \texttt{!=}\ |\ \texttt{==}\ |\ \texttt{<} \ |\ \texttt{>} \ |\ \texttt{<=} \ |\ \texttt{>=} \\
+\end{align*}
+\caption{Syntax of the simple functional language}
+\label{fig:lang}
+\end{figure}
+
+While our language allows to define functions on its own, we will further allow the usage of function names that may have not been defined in the language itself. To allow this, the user can create a separate Python file that contains the definitions of additional functions. Our interpreter will then forward the calls to these functions to the Python interpreter. This allows us to easily access more complicated functionality such as the \texttt{print} function.
+
+Additionally to standard operations, the syntax of the language supports creating layers that can be applied onto each identifier. The syntax of a layer consists of the following:
+\begin{itemize}
+	\item $id_1$ -- The name of the identifier to be refined
+	\item $id_2$ -- The name of the layer
+	\item An arbitrary \textit{String} that represents the refinement. Note that the syntax does not restrict the format of this string, as this information will be parsed later by the corresponding type checking layer.
+\end{itemize}
+
+These layers can then be used to define properties. Depending on the Layers' implementation, these properties can apply to identifiers or can be used to define properties of the type system the layer defines. In a very basic and minimal approach these layers can be used to annotate types to variables and functions. Additionally, one might add additional layers to a variable to ensure more properties. Each layer will be checked individually and independently. A more detailled approach of the architecture behind our layered approach will be described in section \ref{ssec:architecture}.
+
+An example how a program written in our language could look like can be seen in \ref{lst:fac_example}. The program defines a factorial function that is refined in two layers. The first layer \textit{base} is a simple type layer that defines that \texttt{fac} takes an \texttt{Int} and returns an \texttt{Int}. The second layer \textit{liquid} is a refinement layer that refines that the input should be greater or equal to zero and that the output will be greater than zero. The implementations of the \textit{base} and \textit{liquid} layer are not part of our language and have to be implemented independently.
+
+\begin{lstlisting}[caption={Example of a factorial function in our simple language}, label={lst:fac_example}]
+fac::base:: Int -> Int
+fac::liquid:: {v:Int | v >= 0} -> {v:Int | v > 0}
+fac x { 
+let cond := (x == 0) in
+	if cond then 
+		1 
+	else 
+		x * fac (x - 1) 
+}
+\end{lstlisting}
+
+\subsection{Language Implementation Architecture}
+\label{ssec:architecture}
+
+The implementation of our language will be done in the \texttt{Python} programming language. Generally the implementation can be divided into three individual parts, which we will describe throughout this section:
+
+\begin{enumerate}
+	\item A parser that parses the input program and creates an abstract syntax tree (AST) of the program.
+	\item A layered type checker that checks the defined type layers for the tree incrementally.
+	\item An interpreter that executes the program.
+\end{enumerate}
+
+To parse a input program, we will use the Python library \Lark{} \cite{Lark}. This library allows us to define a grammar for the language and then parse a program according to this grammar. All further processing will be performed on the resulting AST. To process and execute the AST we will use the Visitors and Transformers provided by the \Lark{} library.
+
+After parsing the AST there are a few simple checks that are run by an initial interpreter pass. Namely, our framework will check that variables are assigned to at least once before they are used in another expression, it will make sure that \texttt{let} does not redeclare an already existing variable. Additionally, function names cannot be defined twice and the framework will also check that functons that are called have either been defined previously in the source file or alternatively are defined externally in Python.
+
+After this initial check has passed, the main part of our work, the layered type checker, will start processing the layers. A "Layer" here refers to a custom implementation that has to be defined in a separate Python file by the user. Based on the defined layer name, our framework will dynamically load the python file as an independent module and will use it to run the type-checker for this layer. Our framework supports the definition of the following functions for each layer:
+
+\begin{itemize}
+	\item \texttt{depends\_on} -- This function returns a list of strings. Each string represents a name of a layer that this layer depends on and thus has to be checked before this layer can be run. This is used to ensure that the layers are checked in the correct order.
+	\item \texttt{run\_before} -- This function is similar to \texttt{depends\_on} but returns a list of layers that must not run before this layer has been checked corretly. Together with the \texttt{depends\_on} function this allows to flexibly insert layers into any step of the type-checking process.
+	\item \texttt{parse\_type} -- This function may be used to define and parse custom data types that are defined usinf the $CustomExpr$ rule in the grammar. \todo[inline]{This is a functionality we discussed in the beginning, that would be nice. However for our current use cases we do not really need it. Should we keep it in the framework or just omit it?}
+	\item \texttt{typecheck} -- This function is used to check the layer. It is passed the AST of the program with all the annotated information from the previous layers. It should return the annotated tree with the new layer information added.
+\end{itemize}
+
+Using the \texttt{depends\_on} function, the layered type checker will first build a dependency graph of all layers. By using the dependency graph we can calculate the topological order of layers that can be checked in the correct order. Additionally this also allows to check independent layers in parallel. Only if all layers have been checked successfully, the program will be executed.
+
+In order to communicate annotated information between the different layers, we replace the \texttt{Tree} \Lark{} class with our own \texttt{AnnotatedTree} class. This class allows us to store a dictionary of annotations for each node in the tree. The annotations are stored as a dictionary of dictionaries. The first key of the dictionary is the name of the layer, the second key is the name of the annotation. This allows us to store multiple annotations for each layer. The \texttt{AnnotatedTree} class also provides a simple interface to access and add annotations which can be used by developers implementing new layers:
+
+\begin{itemize}
+	\item \texttt{get\_layer\_annotation(layer\_id, identifier, key)} -- This function returns the annotation with the given key for the given identifier in the given layer. If no annotation is found, it returns \texttt{None}.
+	\item \texttt{get\_all\_layer\_annotations(layer\_id, identifier)} -- This function returns a dictionary of all annotations for the given identifier in the given layer. If no annotations are found, it returns an empty dictionary.
+	\item \texttt{add\_layer\_annotation(layer\_id, identifier, key, value)} -- This function adds a annotation with the given key for the given identifier in the given layer to the given value.
+	\item \texttt{update\_layer\_annotations(layer\_id, identifier, values)} -- This updates the layer annotations for the given identifier in the given layer with the given dictionary of values.
+\end{itemize}
+
+Using this architecture, we provide a flexible framework that allows to easily extend our toy language with different layers that can be used to implement different type systems. Similar to passes in a compiler, the layers can be added and removed easily. Additionally, the layers can be easily combined to create more complex type systems.

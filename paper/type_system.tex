@@ -1,0 +1,63 @@
+
+\begin{table}[h!]
+  \begin{center}
+    \begin{tabular}{cl} 
+      \\
+      \(\frac
+         {x \ : \ \sigma \ \in \ \Gamma}
+        {\Gamma \  \vdash \ x \ : \ \sigma} \) 
+      &  [\texttt{Var}]  \\
+      \\
+      
+      \\
+      \(\frac
+        {\Gamma \  \vdash \ {e}_{0} \ : \ \tau \rightarrow {\tau}' \;\;\;\; \Gamma \  \vdash \  {e}_{1} \ : \ \tau}
+        {\Gamma \vdash {e}_{0} \; {e}_{1} \ : \ {\tau}'} \)
+      & [\texttt{App}] \\
+      \\
+      
+      \\
+      \(\frac
+        {\Gamma , \ x \ : \ \tau \ \vdash \ e \ : \ {\tau}'}
+        {\Gamma \ \vdash \ \lambda x \ . \ e \ : \ \tau \rightarrow{\tau}'}\)
+      & [\texttt{Abs}] \\
+      \\
+      
+      \\
+      \(\frac
+        {\Gamma \ \vdash \ {e}_{0} \ : \ \sigma \;\;\;\; 
+         \Gamma, \ x \ : \ \sigma \ \vdash \ {e}_{1} \ : \ \tau}
+        {\Gamma \ \vdash \ \texttt{let} \ x \ = \ {e}_{0} \ \texttt{in} \ {e}_{1} \ : \ \tau}\)
+      & [\texttt{Let}] \\ 
+      \\
+      
+      \\
+      \(\frac
+        {
+            \newline
+            \Gamma \ \vdash \ e \ : \ {\sigma}' \;\;\;\;
+            {\sigma}' \ \sqsubseteq  \ \sigma
+        }
+        {
+            \Gamma \ \vdash \ e \ : \ \sigma
+        }\)
+      & [\texttt{Inst}] \\
+      \\
+      
+      \\
+      \(
+       \frac
+       {
+        \Gamma \ \vdash \ e \ : \ \sigma \;\;\;\;
+        \alpha \ \notin \text{free}(\Gamma)
+       }
+       {
+        \Gamma \ \vdash \ e \ : \ \forall \ \alpha \ . \ \sigma
+       }
+      \)
+      & [\texttt{Gen}] \\
+      \\
+    \end{tabular}
+  \end{center}
+\end{table}
+
