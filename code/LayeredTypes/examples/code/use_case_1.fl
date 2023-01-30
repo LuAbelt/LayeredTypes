@@ -1,3 +1,6 @@
+-- Use case 1:
+-- We implement separate layers for type annotations, type checking and state tracking
+
 -- Example scenario:
 -- We open a file and read it line by line
 -- We want to keep track of the line number and the line itself

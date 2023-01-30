@@ -1,0 +1,67 @@
+-- Use case 2:
+-- We use the layered approach to modularize a liquid type checking approach
+
+-- Generally the idea is to realize something where we can define independent (named) liquid refinments that we can combine
+-- eg like this:
+-- GreaterZero = {v:Int | v > 0}
+-- NonEmpty = { v: [a] | len v > 0 }
+-- AllPositive = { v: [Int] | forall i. i < len v => v[i] > 0 }
+-- Ordered = { v: [a] | forall i j. i < j => v[i] < v[j] }
+-- Then we can combine them like this when, eg, refining a function:
+-- max :: { Ordered && NonEmpty && AllPositive } -> GreaterZero
+-- Each of the Ordered, NonEmpty and AllPositive refinements shall be checked independently
+-- In case of a failure, we want to be able to tell which of the refinements failed
+
+-- Using our architecture, there are two approaches to realize this:
+-- Approach 1:
+--      - Each Refinement is a separate layer.
+--      - These individual layers simply annotate the AST with the refinement in the typecheck method
+--      - There is a final layer that performs the layered type checking
+--      - Alternatively, there is just a single layer that has a reserved keyword to define refinements
+
+-- Example syntax (With separate layers for annotation):
+def :: LT-Positive :: Ordered = {v:Int | v > 0}
+def :: LT-NonEmpty :: NonEmpty = {v:[a] | len v > 0}
+def :: LT-Ordered :: Ordered = {v:[a] | forall i j. i < j => v[i] < v[j]}
+def :: LT-AllPositive :: AllPositive = {v:[Int] | forall i. i < len v => v[i] > 0}
+max :: LT-Typecheck :: { Ordered && NonEmpty && AllPositive } -> Positive
+
+-- Approach 2:
+--      - Each Refinement is a separate layer.
+--      - We extend the framework to separate the typechecking from the annotation of the AST
+--      - In the adapted framework first all annotations are performed
+--      - Then the typechecking is performed by each layer independently
+
+-- Example Syntax:
+def :: LT-Positive :: Ordered = {v:Int | v > 0}
+def :: LT-NonEmpty :: NonEmpty = {v:[a] | len v > 0}
+def :: LT-Ordered :: Ordered = {v:[a] | forall i j. i < j => v[i] < v[j]}
+def :: LT-AllPositive :: AllPositive = {v:[Int] | forall i. i < len v => v[i] > 0}
+
+max :: LT-Positive :: {} -> {Positive}
+max :: LT-NonEmpty :: {NonEmpty} -> {}
+max :: LT-Ordered :: {Ordered} -> {}
+max :: LT-AllPositive :: {AllPositive} -> {}
+
+-- Alternatively, we could also implement it in a way that we define a separate layer for annotating refinements to variables/functions
+-- This would reduce the four last lines to a single line:
+max :: LiquidTypes :: { Ordered && NonEmpty && AllPositive } -> Positive
+
+
+-- Pros and cons of the two approaches:
+-- Approach 1:
+--      - Pro: No adaptation of the framework necessary
+--      - Pro: Depending on the exact implementation it might be clearer which refinements are used by variables/functions
+--      - Con: We basically implement a layered approach again as a separate layer
+--      - Con: The typechecking layer needs to somehow collect information about the refinements/names
+
+-- Approach 2:
+--      - Pro: The responsibility of each layer stays clear
+--      - Pro: No additional layer for typechecking is necessary
+--      - Con: The framework needs to be adapted
+--      - Con: Since each layer is responsible for its own typechecking, it might not be clear which refinements are used
+
+-- For both approaches we will need layers that are virtually identical with only very small differences
+-- Therefore it might also be useful to add some concept of "template" layers to the framework
+-- Example Syntax:
+def :: LiquidTypes<Ordered> :: {v:Int | v > 0} -- Template instantiation with name "Ordered"

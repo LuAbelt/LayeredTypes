@@ -6,7 +6,7 @@ In this section we will describe our implementation of a layered typing approach
 \subsection{Language}
 \label{ssec:language}
 
-To demonstrate our layered approach we implemented a simple functional language. The syntax of said language is described in \ref{fig:lang}. The language is similar to most simple functional languages and generally follows the reduction semantics of a standard Hindley-Milner type system. The only data types available in the language are the \texttt{Int} and the \texttt{Bool} type. However, the language does not strictly require the programmer to explicitly specify the type of a variable.
+To demonstrate our layered approach we implemented a simple functional language. The syntax of said language is described in Fig. \ref{fig:lang}. The language is similar to most simple functional languages. Implicitly, our language natively supports \textt{Boolean} and \texttt{Integer} datatypes through the available constants. However, the language on it's own does not require any type annotations.
 
 \begin{figure}[ht!]
 \begin{align*}
@@ -35,7 +35,7 @@ Additionally to standard operations, the syntax of the language supports creatin
 	\item An arbitrary \textit{String} that represents the refinement. Note that the syntax does not restrict the format of this string, as this information will be parsed later by the corresponding type checking layer.
 \end{itemize}
 
-These layers can then be used to define properties. Depending on the Layers' implementation, these properties can apply to identifiers or can be used to define properties of the type system the layer defines. In a very basic and minimal approach these layers can be used to annotate types to variables and functions. Additionally, one might add additional layers to a variable to ensure more properties. Each layer will be checked individually and independently. A more detailled approach of the architecture behind our layered approach will be described in section \ref{ssec:architecture}.
+These layers can be used to define properties. Depending on the specific implementation of a layer, these properties can apply to identifiers or can be used to define properties of the type system the layer defines. In a very basic and minimal approach these layers can be used to annotate types to variables and functions. Additionally, one might add additional layers to a variable to ensure more properties. Each layer will be checked individually and independently. A more detailled approach of the architecture behind our layered approach will be described in section \ref{ssec:architecture}.
 
 An example how a program written in our language could look like can be seen in \ref{lst:fac_example}. The program defines a factorial function that is refined in two layers. The first layer \textit{base} is a simple type layer that defines that \texttt{fac} takes an \texttt{Int} and returns an \texttt{Int}. The second layer \textit{liquid} is a refinement layer that refines that the input should be greater or equal to zero and that the output will be greater than zero. The implementations of the \textit{base} and \textit{liquid} layer are not part of our language and have to be implemented independently.
 
