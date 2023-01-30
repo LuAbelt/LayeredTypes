@@ -11,7 +11,7 @@ strToInt :: types :: string -> int
 
 len :: types :: [string] -> int
 createFD :: types :: string -> FileHandle
-openFile :: types :: FileHandle -> FileHandle
+openFile :: types :: FileHandle -> void
 readLines :: types :: FileHandle -> [string]
 closeFile :: types :: FileHandle -> void
 print :: types :: Any -> void
@@ -22,17 +22,7 @@ numTypes :: typecheck :: int
 subtype :: typecheck :: int <: Any
 subtype :: typecheck :: string <: Any
 
--- Theoretical layer definitions for a state layer
--- 1. Open - The file is open and can be read from
--- 2. Consumed - The file has been read from and can no longer be read from, but still open
--- 3. Closed - The file is closed and cannot be read from
-
--- The state of a file handle can be changed by the following functions:
--- 1. openFile - Return something that has the state open
--- 2. readLines - Changes the state from Open to Consumed
--- 3. closeFile - Changes the state from Consumed to Closed
-
--- Layer definitions could look as following:
+-- Layer definitions for state tracking
 -- openFile takes something without a state and returns something with state "Open"
 createFD :: state :: {} -> { Closed }
 openFile :: state :: {Closed => Open} -> {}

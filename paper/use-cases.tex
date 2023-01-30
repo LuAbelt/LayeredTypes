@@ -161,12 +161,97 @@ closeFile :: state :: {Consumed => Closed} -> {}
 fileDescriptor :: state :: {Closed}
 \end{lstlisting}
 
-With these three layers, we have defined the complete type system for this use-case. Using these three layers we can now ensure the following properties of our program statically:
+The final program with all layer annotations can be found in Listing \ref{lst:uc1_annotated}. With these three layers, we have defined the complete type system for this use-case. Using these three layers we can now ensure the following properties of our program statically:
 
 \begin{itemize}
 	\item Our program is type safe. This means that we can be sure that the program will not crash due to type errors.
 	\item Using the state layer, we ensure that the file descriptor is handled correctly and is in a closed state at the end of the program.
 \end{itemize}
+
+\begin{lstlisting}
+-- Type Layer Definitions for externally defined functions
+getLine :: types :: [string] -> int -> string
+strToInt :: types :: string -> int
+len :: types :: [string] -> int
+createFD :: types :: string -> FileHandle
+openFile :: types :: FileHandle -> void
+readLines :: types :: FileHandle -> [string]
+closeFile :: types :: FileHandle -> void
+print :: types :: Any -> void
+
+-- Layer definitions for type checking
+logicalTypes :: typecheck :: bool
+numTypes :: typecheck :: int
+subtype :: typecheck :: int <: Any
+subtype :: typecheck :: string <: Any
+
+-- State layer definitions
+createFD :: state :: {} -> { Closed }
+openFile :: state :: {Closed => Open} -> {}
+readLines :: state :: {Open => Consumed} -> {}
+closeFile :: state :: {Consumed => Closed} -> {}
+
+processLine :: types :: [string] -> int -> int -> int
+processLine lines idx length {
+
+    end :: types :: bool
+    end := idx == length
+
+    if end then {
+        0
+    } else {
+
+        curLine :: types :: string
+        curLine := getLine(lines, idx)
+
+        number :: types :: int
+        number := strToInt(curLine)
+
+        greaterThanZero :: types :: bool
+        greaterThanZero := number > 0
+
+        if greaterThanZero then {
+            number + processLine(lines, idx + 1, length)
+        } else {
+            (number * number) + processLine(lines, idx + 1, length)
+        }
+
+    }
+}
+
+processLines :: types :: [string] -> int
+processLines lines {
+    length :: types :: int
+    length := len(lines)
+
+    idx :: types :: int
+    idx := 0
+    processLine(lines, idx, length)
+}
+
+fileName :: types :: string
+fileName := "numbers.data"
+
+fileDescriptor :: types :: FileHandle
+fileDescriptor := createFD(fileName)
+
+openFile(fileDescriptor)
+
+lines :: types :: [string]
+lines := readLines(fileDescriptor)
+
+closeFile(fileDescriptor)
+
+total :: types :: int
+total := processLines(lines)
+
+print(total)
+total
+
+-- State post-conditions
+-- The file handle is closed after the program has finished
+fileDescriptor :: state :: {Closed}
+\end{lstlisting}
 
 \subsubsection{Discussion}
 
