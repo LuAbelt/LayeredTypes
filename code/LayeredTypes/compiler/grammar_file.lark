@@ -1,6 +1,6 @@
 start: newline _stmt+
 
-ident: WORD
+ident: CNAME
 newline: NEWLINE*
 
 _stmt:       _expr newline
@@ -22,15 +22,15 @@ _expr:       ident
             | fun_call
             | "(" _expr ")"              //Convenience for readability
 custom_expr:    /.+/
-fun_def:    WORD WORD* block
+fun_def:    CNAME CNAME* block
 block:  "{" newline _stmt+ newline "}"
-fun_call:   WORD "(" _fun_args? ")" newline
+fun_call:   CNAME "(" _fun_args? ")" newline
 _fun_args:  _expr | _expr "," _fun_args
 layer_def: ident "::" ident "::"  /.+/  -> layer
 bin_op:     _expr OP _expr
 OP: "+" | "-" | "*" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||"
 
-%import common.WORD
+%import common.CNAME
 %import common.WS_INLINE
 %import common.SIGNED_NUMBER
 %import common.SQL_COMMENT

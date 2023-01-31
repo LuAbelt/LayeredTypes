@@ -20,11 +20,11 @@
 --      - Alternatively, there is just a single layer that has a reserved keyword to define refinements
 
 -- Example syntax (With separate layers for annotation):
-def :: LT-Positive :: Ordered = {v:Int | v > 0}
-def :: LT-NonEmpty :: NonEmpty = {v:[a] | len v > 0}
-def :: LT-Ordered :: Ordered = {v:[a] | forall i j. i < j => v[i] < v[j]}
-def :: LT-AllPositive :: AllPositive = {v:[Int] | forall i. i < len v => v[i] > 0}
-max :: LT-Typecheck :: { Ordered && NonEmpty && AllPositive } -> Positive
+-- def :: LiquidTypes :: Ordered = {v:Int | v > 0}
+-- def :: LiquidTypes :: NonEmpty = {v:[a] | len v > 0}
+-- def :: LiquidTypes :: Ordered = {v:[a] | forall i j. i < j => v[i] < v[j]}
+-- def :: LiquidTypes :: AllPositive = {v:[Int] | forall i. i < len v => v[i] > 0}
+-- max :: LiquidTypes :: { Ordered && NonEmpty && AllPositive } -> Positive
 
 -- Approach 2:
 --      - Each Refinement is a separate layer.
@@ -33,19 +33,19 @@ max :: LT-Typecheck :: { Ordered && NonEmpty && AllPositive } -> Positive
 --      - Then the typechecking is performed by each layer independently
 
 -- Example Syntax:
-def :: LT-Positive :: Ordered = {v:Int | v > 0}
-def :: LT-NonEmpty :: NonEmpty = {v:[a] | len v > 0}
-def :: LT-Ordered :: Ordered = {v:[a] | forall i j. i < j => v[i] < v[j]}
-def :: LT-AllPositive :: AllPositive = {v:[Int] | forall i. i < len v => v[i] > 0}
+-- def :: LT-Positive :: Ordered = {v:Int | v > 0}
+-- def :: LT-NonEmpty :: NonEmpty = {v:[a] | len v > 0}
+-- def :: LT-Ordered :: Ordered = {v:[a] | forall i j. i < j => v[i] < v[j]}
+-- def :: LT-AllPositive :: AllPositive = {v:[Int] | forall i. i < len v => v[i] > 0}
 
-max :: LT-Positive :: {} -> {Positive}
-max :: LT-NonEmpty :: {NonEmpty} -> {}
-max :: LT-Ordered :: {Ordered} -> {}
-max :: LT-AllPositive :: {AllPositive} -> {}
+-- max :: LT-Positive :: {} -> {Positive}
+-- max :: LT-NonEmpty :: {NonEmpty} -> {}
+-- max :: LT-Ordered :: {Ordered} -> {}
+-- max :: LT-AllPositive :: {AllPositive} -> {}
 
 -- Alternatively, we could also implement it in a way that we define a separate layer for annotating refinements to variables/functions
 -- This would reduce the four last lines to a single line:
-max :: LiquidTypes :: { Ordered && NonEmpty && AllPositive } -> Positive
+-- max :: LiquidTypes :: { Ordered && NonEmpty && AllPositive } -> Positive
 
 
 -- Pros and cons of the two approaches:
@@ -64,4 +64,45 @@ max :: LiquidTypes :: { Ordered && NonEmpty && AllPositive } -> Positive
 -- For both approaches we will need layers that are virtually identical with only very small differences
 -- Therefore it might also be useful to add some concept of "template" layers to the framework
 -- Example Syntax:
-def :: LiquidTypes<Ordered> :: {v:Int | v > 0} -- Template instantiation with name "Ordered"
+-- LiquidTypes<Ordered> :: {v:Int | v > 0} -- Template instantiation of LiquidTypes Can be used for refinements with layer name "Ordered"
+
+
+
+swap list idx1 idx2 {
+    tmp := get_element(list, idx1)
+    set_element(list, idx1, get_element(list, idx2))
+    set_element(list, idx2, tmp)
+}
+
+bubble_up list idx {
+    cond := get_element(list, idx) > get_element(list, (idx + 1))
+    if cond then {
+        swap(list, idx, (idx + 1))
+    }
+
+    cond := idx < len(list) - 2
+
+    if cond then {
+        list := bubble_up(list, (idx + 1))
+    }
+
+    list
+}
+
+bubbleSort_rec list maxIdx {
+    cond := maxIdx > 0
+    if cond then {
+        list := bubble_up(list, 0)
+        list := bubbleSort_rec(list, (maxIdx - 1))
+    }
+
+    list
+}
+
+bubbleSort list {
+    bubbleSort_rec(list, (len(list) - 1))
+}
+
+list := get_list()
+
+bubbleSort(list)
