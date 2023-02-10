@@ -11,7 +11,7 @@ from layers.Layer import Layer
 from layers.LayerImplWrapper import LayerImplWrapper
 
 from compiler.transformers.CollectLayers import CollectLayers
-from compiler.transformers.CheckCF import CheckCF
+from compiler.interpreters.CheckCF import CheckCF
 from compiler.transformers.CreateAnnotatedTree import CreateAnnotatedTree as AnnotateTree
 from compiler.Interpreters import SimpleInterpreter
 

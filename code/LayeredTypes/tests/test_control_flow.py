@@ -1,6 +1,6 @@
 import unittest
 
-from compiler.transformers.CheckCF import CheckCF
+from compiler.interpreters.CheckCF import CheckCF
 from tests.utils import parse_file
 
 

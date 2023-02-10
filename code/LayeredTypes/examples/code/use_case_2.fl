@@ -1,104 +1,33 @@
--- Thought experiment on layering liquid types
+-- Conceptually, I would like to have this:
+-- We can define a "named" refinement as a kind of template instantiation.
+-- In the examples below the names are "Property1", "Property2", "Property3", and "Property4".
+Liquid<Property1> :: { /* Refinement */ }
+Liquid<Property2> :: { /* Refinement */ }
+Liquid<Property3> :: { /* Refinement */ }
+Liquid<Property4> :: { /* Refinement */ }
 
--- Assume we have a variable x and function f with the following liquid signature:
+-- We can then use these named refinements to superimpose them on variables or functions:
+identifier :: Liquid :: { Property1, Property2 }
+function :: Liquid :: { Property3, Property4 }
 
-x :: { v | A && B }
-f :: { v | C && D } -> {v | true}
+-- Then, let's assume we call 'function' with an argument 'identifier':
+function(identifier)
 
--- Now we call f with x as argument:
-f(x)
+-- In a normal liquid type checker, the type checker would ultimately check the following (simplified):
+-- (Property1 && Property2) => (Property3 && Property4)
+-- If this no fails there is no way to tell whether this is caused by Property3 or Property4 not being satisfied.
 
--- From an exact liquid type perspective, the type checker will check:
--- Is the type of x a subtype of { v | C && D }, which is the type of the argument of f?
--- Since liquid types are logical conjunctions, this boils down to an implication:
--- (A && B) -> (C && D)
+-- With our approach, each named refinement performs a type check on it's own.
+-- The main difference is that the type checker will only consider it's own named refinement for the right hand side.
+-- This means, that we will have 4 individual runs of the type checker, verifying the following:
+-- (Property1 && Property2) => true [From Liquid<Property1>]
+-- (Property1 && Property2) => true [From Liquid<Property2>]
+-- (Property1 && Property2) => Property3 [From Liquid<Property3>]
+-- (Property1 && Property2) => Property4 [From Liquid<Property4>]
 
--- Now in a layered approach, each of the properties A, B, C and D is a separate layer
--- Assuming we will treat and verify them completely independently, this leads to the following layers:
-
-x :: A :: { v | A }
-x :: B :: { v | B }
-f :: C :: { v | C } -> {v | true}
-f :: D :: { v | D } -> {v | true}
-
--- Now if each layer is verified completely independently, this leads to the following implication check:
--- Layer A: No check since f is not annotated with A
--- Layer B: No check since f is not annotated with B
--- Layer C: {} -> {v | C}?
--- Layer D: {} -> {v | D}?
-
--- When running this independently we will get a type error for Layer C and Layer D
--- Because we have no way of knowing that the type of x is a subtype of {v | C} (resp. {v | D})
-
-
--- Use case 2:
--- We use the layered approach to modularize a liquid type checking approach
-
--- Generally the idea is to realize something where we can define independent (named) liquid refinments that we can combine
--- eg like this:
--- GreaterZero = {v:Int | v > 0}
--- NonEmpty = { v: [a] | len v > 0 }
--- AllPositive = { v: [Int] | forall i. i < len v => v[i] > 0 }
--- Ordered = { v: [a] | forall i j. i < j => v[i] < v[j] }
--- Then we can combine them like this when, eg, refining a function:
--- max :: { Ordered && NonEmpty && AllPositive } -> GreaterZero
--- Each of the Ordered, NonEmpty and AllPositive refinements shall be checked independently
--- In case of a failure, we want to be able to tell which of the refinements failed
-
--- Using our architecture, there are two approaches to realize this:
--- Approach 1:
---      - Each Refinement is a separate layer.
---      - These individual layers simply annotate the AST with the refinement in the typecheck method
---      - There is a final layer that performs the layered type checking
---      - Alternatively, there is just a single layer that has a reserved keyword to define refinements
-
--- Example syntax (With separate layers for annotation):
--- def :: LiquidTypes :: Ordered = {v:Int | v > 0}
--- def :: LiquidTypes :: NonEmpty = {v:[a] | len v > 0}
--- def :: LiquidTypes :: Ordered = {v:[a] | forall i j. i < j => v[i] < v[j]}
--- def :: LiquidTypes :: AllPositive = {v:[Int] | forall i. i < len v => v[i] > 0}
--- max :: LiquidTypes :: { Ordered && NonEmpty && AllPositive } -> Positive
-
--- Approach 2:
---      - Each Refinement is a separate layer.
---      - We extend the framework to separate the typechecking from the annotation of the AST
---      - In the adapted framework first all annotations are performed
---      - Then the typechecking is performed by each layer independently
-
--- Example Syntax:
--- def :: LT-Positive :: Ordered = {v:Int | v > 0}
--- def :: LT-NonEmpty :: NonEmpty = {v:[a] | len v > 0}
--- def :: LT-Ordered :: Ordered = {v:[a] | forall i j. i < j => v[i] < v[j]}
--- def :: LT-AllPositive :: AllPositive = {v:[Int] | forall i. i < len v => v[i] > 0}
-
--- max :: LT-Positive :: {} -> {Positive}
--- max :: LT-NonEmpty :: {NonEmpty} -> {}
--- max :: LT-Ordered :: {Ordered} -> {}
--- max :: LT-AllPositive :: {AllPositive} -> {}
-
--- Alternatively, we could also implement it in a way that we define a separate layer for annotating refinements to variables/functions
--- This would reduce the four last lines to a single line:
--- max :: LiquidTypes :: { Ordered && NonEmpty && AllPositive } -> Positive
-
-
--- Pros and cons of the two approaches:
--- Approach 1:
---      - Pro: No adaptation of the framework necessary
---      - Pro: Depending on the exact implementation it might be clearer which refinements are used by variables/functions
---      - Con: We basically implement a layered approach again as a separate layer
---      - Con: The typechecking layer needs to somehow collect information about the refinements/names
-
--- Approach 2:
---      - Pro: The responsibility of each layer stays clear
---      - Pro: No additional layer for typechecking is necessary
---      - Con: The framework needs to be adapted
---      - Con: Since each layer is responsible for its own typechecking, it might not be clear which refinements are used
-
--- For both approaches we will need layers that are virtually identical with only very small differences
--- Therefore it might also be useful to add some concept of "template" layers to the framework
--- Example Syntax:
--- LiquidTypes<Ordered> :: {v:Int | v > 0} -- Template instantiation of LiquidTypes Can be used for refinements with layer name "Ordered"
-
+-- This is a bit more verbose, but it allows us to pinpoint the exact refinement that is causing the type error.
+-- It is still not possible to determine whether the error is caused by Property1 or Property2, but this is a limitation of the type checker.
+-- Also, this is a completely independent area of research.
 
 
 swap list idx1 idx2 {
