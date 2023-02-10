@@ -26,12 +26,13 @@ subtype :: typecheck :: int <: Any
 subtype :: typecheck :: string <: Any
 
 -- Layer definitions for state tracking
--- openFile takes something without a state and returns something with state "Open"
+-- createFD returns a file handle with state "Closed"
 createFD :: state :: {} -> { Closed }
+-- openFile takes something with state "Closed" and transitions it to state "Open"
 openFile :: state :: {Closed => Open} -> {}
--- readLines takes something with state "Open" and returns something with state "Consumed"
+-- readLines takes something with state "Open" and transitions it to state "Consumed"
 readLines :: state :: {Open => Consumed} -> {}
--- closeFile takes something with state "Consumed" and returns something with state "Closed"
+-- closeFile takes something with state "Consumed" and transitions it to state "Closed"
 closeFile :: state :: {Consumed => Closed} -> {}
 
 -- Recursive process line that is called in order to process each line
