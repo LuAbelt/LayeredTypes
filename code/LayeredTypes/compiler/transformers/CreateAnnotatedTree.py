@@ -47,3 +47,7 @@ class AnnotatedTree(lark.Tree):
 class CreateAnnotatedTree(lark.Transformer):
     def __default__(self, data, children, meta):
         return AnnotatedTree(data, children, meta)
+
+def make_annotated_tree(tree):
+    transformer = CreateAnnotatedTree()
+    return transformer.transform(tree)

@@ -1,0 +1,9 @@
+-- Simply test liquid types for externally defined functions
+
+fun :: liquid :: { x:Int | x>0 } -> {y:Int | y==x}
+
+foo :: liquid :: {x:Int | x==1}
+bar :: liquid :: {x:Int | x==1}
+
+foo := 1
+bar := fun(foo)

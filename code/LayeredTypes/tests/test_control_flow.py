@@ -107,6 +107,13 @@ class TestControlFlow(unittest.TestCase):
         self.assertEqual(context.exception.end_lineno, 3)
         self.assertEqual(context.exception.end_offset, 6)
 
+    def test_let_new_var_in_scope(self):
+        tree = parse_file("/test_code/control_flow/let_define_new_var_in_scope.fl")
+
+        check_cf = CheckCF()
+
+        check_cf.visit_topdown(tree)
+
     def test_variable_out_of_scope(self):
         tree = parse_file("/test_code/control_flow/variable_out_of_scope.fl")
 

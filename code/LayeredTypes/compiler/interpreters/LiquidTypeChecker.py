@@ -2,14 +2,28 @@ from copy import copy
 
 import lark
 
+from aeon.core.liquid import LiquidLiteralInt
 from aeon.core.types import t_int, t_bool, t_string, RefinedType
 from aeon.typing.context import EmptyContext, VariableBinder
 from aeon.typing.entailment import entailment
 from aeon.verification.horn import solve
 from aeon.verification.sub import sub
-from compiler.transformers.CreateAnnotatedTree import AnnotatedTree
+from compiler.transformers.CreateAnnotatedTree import AnnotatedTree, make_annotated_tree
 from aeon.frontend.parser import mk_parser
 
+def add_to_context(ctx1, ctx2):
+    if(isinstance(ctx1, EmptyContext)):
+        return ctx2
+
+    if(isinstance(ctx2, EmptyContext)):
+        return ctx1
+
+    if isinstance(ctx1.prev, EmptyContext):
+        ctx1.prev = ctx2
+    else:
+        add_to_context(ctx1.prev, ctx2)
+
+    return ctx1
 
 class LiquidLayer(lark.visitors.Interpreter):
     def __init__(self):
@@ -18,13 +32,16 @@ class LiquidLayer(lark.visitors.Interpreter):
         self.__ctx = EmptyContext()
         pass
 
+    def visit(self, tree):
+        if not isinstance(tree, AnnotatedTree):
+            tree = make_annotated_tree(tree)
+
+        return super().visit(tree)
     def _visit_tree(self, tree):
         self.__annotate(tree)
         return super()._visit_tree(tree)
 
     def __annotate(self, tree):
-        if not isinstance(tree, AnnotatedTree):
-            tree = AnnotatedTree(tree.data, tree.children, tree.meta)
 
         for identifier in self.__types:
             tree.add_layer_annotation("liquid", identifier, "type", self.__types[identifier])
@@ -46,6 +63,11 @@ class LiquidLayer(lark.visitors.Interpreter):
         if not entailment(ctx, c):
             raise Exception("Could not assign value of type " + str(rhs_type) + " to variable of type " + str(lhs_type))
 
+        # Update the context and types
+        ctx = VariableBinder(ctx, tree.children[0].children[0].value, rhs_type)
+        self.__ctx = ctx
+        self.__types[tree.children[0].children[0].value] = rhs_type
+
     def ident(self, tree):
         identifier = tree.children[0].value
         id_type = tree.get_layer_annotation("liquid", identifier, "type")
@@ -62,8 +84,9 @@ class LiquidLayer(lark.visitors.Interpreter):
         if layer_id != "liquid":
             return
 
-        refinement_str = [x.strip for x in tree.children[2].value.splt("->")]
+        refinement_str = [x.strip() for x in tree.children[2].value.split("->")]
 
+        is_fn = len(refinement_str) > 1
         try:
             # Special case for functions that take no arguments
             if len(refinement_str) == 2 and len(refinement_str[0]) == 0 :
@@ -73,21 +96,22 @@ class LiquidLayer(lark.visitors.Interpreter):
         except Exception as e:
             raise Exception("Could not parse refinement type: " + str(e))
 
-        self.__types[identifier] = refinement_types
-
-        # If this is a variable, add it to the current context
-        if len(refinement_str) == 1:
+        if is_fn:
+            self.__fun_types[identifier] = refinement_types
+        else:
+            self.__types[identifier] = refinement_types[0]
             self.__ctx = VariableBinder(self.__ctx, identifier, refinement_types[0])
 
 
+
     def num(self, tree):
-        return t_int
+        return mk_parser("type").parse("{v:Int | v == " + tree.children[0].value + "}")
 
     def true(self, tree):
-        return t_bool
+        return mk_parser("type").parse("{v:Bool | v}")
 
     def false(self, tree):
-        return t_bool
+        return mk_parser("type").parse("{v:Bool | !v }")
 
     def bin_op(self, tree):
         op = tree.children[1].value
@@ -105,15 +129,16 @@ class LiquidLayer(lark.visitors.Interpreter):
         fun_identifier = tree.children[0].value
 
         expected_arg_types = tree.get_layer_annotation("liquid", fun_identifier, "function_type")
+        actual_arg_types = [self.visit(arg) for arg in tree.children[1:]]
 
         # Check that the number of arguments is correct
-        if len(tree.children[1].children) != len(expected_arg_types) - 1:
+        if len(actual_arg_types) != len(expected_arg_types) - 1:
             raise Exception("Incorrect number of arguments for function " + fun_identifier)
 
         context = tree.get_layer_annotation("liquid", "contexts", "context")
         # Check that the types of the arguments are correct
-        for i in range(len(tree.children[1].children)):
-            arg_type = self.visit(tree.children[1].children[i])
+        for i in range(len(actual_arg_types)):
+            arg_type = actual_arg_types[i]
 
             if not entailment(context, sub(arg_type, expected_arg_types[i])):
                 raise Exception("Incorrect type for argument " + str(i) + " of function " + fun_identifier)
@@ -123,8 +148,10 @@ class LiquidLayer(lark.visitors.Interpreter):
             # Example for a function f that takes two arguments:
             # f :: { x: Int | x > 0 } -> { y: Int | y > x } -> { z: Int | z > y }
             assert type(arg_type) == RefinedType
-            context = VariableBinder(context, "arg"+i, arg_type)
+            context = VariableBinder(context, f"arg{i}", arg_type)
 
+        tree.add_layer_annotation("liquid", "contexts", "context", context)
+        self.__ctx = context
 
         return expected_arg_types[-1]
 
@@ -155,7 +182,7 @@ class LiquidLayer(lark.visitors.Interpreter):
         # Add the types of the arguments to the context and types dictionary
         for i in range(len(arg_names)):
             self.__ctx = VariableBinder(self.__ctx, arg_names[i], fun_type[i])
-            self.__types[arg_names[i]] = [fun_type[i]]
+            self.__types[arg_names[i]] = fun_type[i]
 
         # Visit the body of the function
         self.visit(tree.children[-1])
@@ -189,6 +216,7 @@ class LiquidLayer(lark.visitors.Interpreter):
 
         # TODO: Add expected or actual type to context?
         self.__ctx = VariableBinder(self.__ctx, ident, type_expected)
+        self.__types[ident] = type_expected
 
         # Visit the body of the let statement
         self.visit(tree.children[2])

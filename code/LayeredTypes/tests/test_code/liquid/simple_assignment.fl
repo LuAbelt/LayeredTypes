@@ -1,0 +1,6 @@
+-- This is a relative simple base case for a refined assignment
+x :: liquid :: {v:Int | v > 5}
+y :: liquid :: {w:Int | w > 0}
+
+x := 10
+y := x

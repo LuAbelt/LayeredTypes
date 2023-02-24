@@ -1,0 +1,8 @@
+-- Slightly more complex example for a refined assignment
+x :: liquid :: {v: Int | v > 0}
+y :: liquid :: {v: Int | v > 5}
+
+x := 10
+-- This assignment only works, because we update the type of x after the previous assignment
+-- to: {v: Int | v == 10}
+y := x

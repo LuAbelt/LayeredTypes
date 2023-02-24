@@ -1,3 +1,3 @@
 [submodule "code/LayeredTypes/aeon-lt"]
 	path = code/LayeredTypes/aeon-lt
-	url = git@github.com:LuAbelt/aeon-lt.git
+	url = ssh://git@ssh.github.com:443/LuAbelt/aeon-lt.git
