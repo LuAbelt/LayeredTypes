@@ -11,20 +11,6 @@ from aeon.verification.sub import sub
 from compiler.transformers.CreateAnnotatedTree import AnnotatedTree, make_annotated_tree
 from aeon.frontend.parser import mk_parser
 
-def add_to_context(ctx1, ctx2):
-    if(isinstance(ctx1, EmptyContext)):
-        return ctx2
-
-    if(isinstance(ctx2, EmptyContext)):
-        return ctx1
-
-    if isinstance(ctx1.prev, EmptyContext):
-        ctx1.prev = ctx2
-    else:
-        add_to_context(ctx1.prev, ctx2)
-
-    return ctx1
-
 class LiquidLayer(lark.visitors.Interpreter):
     def __init__(self):
         self.__types = {}
