@@ -3,6 +3,14 @@ x :: liquid :: {v: Int | v > 0}
 y :: liquid :: {v: Int | v > 5}
 
 x := 10
--- This assignment only works, because we update the type of x after the previous assignment
--- to: {v: Int | v == 10}
+-- We (statically) know that the type of x is {v: Int | v == 10}
+-- Should we accept this assignment?
+y := x
+
+
+-- Later reassignment should be accepted as well, if it matches the (original) defined type of x
+x := 3
+
+--Now the assignment to y should fail, since the type of x is {v: Int | v == 3}
+-- which is not a subtype of {v: Int | v > 5}
 y := x

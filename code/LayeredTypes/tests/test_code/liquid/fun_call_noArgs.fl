@@ -1,0 +1,3 @@
+noArgs :: liquid :: -> {c:Int | c == 1}
+-- Simply call the function
+noArgs()

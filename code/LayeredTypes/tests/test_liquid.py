@@ -17,5 +17,14 @@ class TestLiquidLayer(unittest.TestCase):
         with self.assertRaises(Exception):
             compiler.typecheck(src_file)
 
-    def test_fun_call(self):
-        typecheck_correct_file(self, "/test_code/liquid/fun_call.fl")
+    def test_fun_call_assign(self):
+        typecheck_correct_file(self, "/test_code/liquid/fun_call_assign.fl")
+
+    def test_fun_call_noArgs(self):
+        typecheck_correct_file(self, "/test_code/liquid/fun_call_noArgs.fl")
+
+    def test_fun_call_oneArg(self):
+        typecheck_correct_file(self, "/test_code/liquid/fun_call_oneArg.fl")
+
+    def test_fun_call_twoArgs(self):
+        typecheck_correct_file(self, "/test_code/liquid/fun_call_twoArgs.fl")
