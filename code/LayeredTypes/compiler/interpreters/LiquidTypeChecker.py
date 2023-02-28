@@ -2,7 +2,7 @@ from copy import copy
 
 import lark
 
-from aeon.core.liquid import LiquidLiteralInt
+from aeon.core.liquid import LiquidLiteralInt, LiquidLiteralBool
 from aeon.core.types import t_int, t_bool, t_string, RefinedType
 from aeon.typing.context import EmptyContext, VariableBinder
 from aeon.typing.entailment import entailment
@@ -39,12 +39,17 @@ class LiquidLayer(lark.visitors.Interpreter):
 
 
     def assign(self, tree: AnnotatedTree):
+        raise NotImplementedError("Assignments are not supported in the liquid layer. Only let bindings are supported.")
+
         lhs_type = self.visit(tree.children[0])
-        rhs_type = self.visit(tree.children[1])
+        rhs_type, rhs_ctx = self.visit(tree.children[1])
 
         c = sub(rhs_type, lhs_type)
 
         ctx = tree.get_layer_annotation("liquid", "contexts", "context")
+
+        if rhs_ctx:
+            ctx = rhs_ctx
 
         if not entailment(ctx, c):
             raise Exception("Could not assign value of type " + str(rhs_type) + " to variable of type " + str(lhs_type))
@@ -91,20 +96,22 @@ class LiquidLayer(lark.visitors.Interpreter):
 
 
     def num(self, tree):
-        return mk_parser("type").parse("{v:Int | v == " + tree.children[0].value + "}")
+        return RefinedType("v", t_int, LiquidLiteralInt(tree.children[0]).value), None
 
     def true(self, tree):
-        return mk_parser("type").parse("{v:Bool | v}")
+        return RefinedType("v", t_bool, LiquidLiteralBool(True)), None
 
     def false(self, tree):
-        return mk_parser("type").parse("{v:Bool | !v }")
+        return RefinedType("v", t_bool, LiquidLiteralBool(False)), None
 
     def bin_op(self, tree):
         op = tree.children[1].value
 
         if op in {"+", "-", "*"}:
             # Possible improvement:
-            # Use liquid type inference to determine a more precise type
+            # Use liquid type inference to determine a more precise type, like
+            # Where we need to ensure that left and right have the same base type
+            # {v:Base | v == left + right}
             return t_int
 
         if op in {"==", "!=", "<", ">", "<=", ">="}:
@@ -126,20 +133,22 @@ class LiquidLayer(lark.visitors.Interpreter):
         for i in range(len(actual_arg_types)):
             arg_type = actual_arg_types[i]
 
-            if not entailment(context, sub(arg_type, expected_arg_types[i])):
-                raise Exception("Incorrect type for argument " + str(i) + " of function " + fun_identifier)
+            c = sub(arg_type, expected_arg_types[i])
+
+            if not entailment(context, c):
+                raise Exception("Incorrect type for argument " + str(i) + " of function " + fun_identifier + ". Expected " + str(expected_arg_types[i]) + " but got " + str(arg_type) )
 
             # We need to add the type of the argument to the context
             # As other refinements may reference it
             # Example for a function f that takes two arguments:
             # f :: { x: Int | x > 0 } -> { y: Int | y > x } -> { z: Int | z > y }
             assert type(arg_type) == RefinedType
-            context = VariableBinder(context, f"arg{i}", arg_type)
+            context = VariableBinder(context, expected_arg_types[i].name, arg_type)
 
-        tree.add_layer_annotation("liquid", "contexts", "context", context)
-        self.__ctx = context
+        # tree.add_layer_annotation("liquid", "contexts", "context", context)
+        # self.__ctx = context
 
-        return expected_arg_types[-1]
+        return expected_arg_types[-1], context
 
     def fun_def(self, tree):
         # For a function definition, we need to add the types of the arguments to the context
