@@ -2,5 +2,6 @@
 fun :: liquid :: {x:Int | x > 0} -> {y:Int|y>x}
 x :: liquid :: {x:Int | x > 0}
 
-x := 1
-fun(x)
+let x := 1 in {
+    fun(x)
+}

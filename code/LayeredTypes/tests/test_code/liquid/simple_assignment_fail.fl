@@ -1,4 +1,6 @@
 x :: liquid :: { c:Int | c>0 }
 
 -- This assignment will fail since 0 is not greater than 0
-x := 0
+let x := 0 in {
+    x
+}

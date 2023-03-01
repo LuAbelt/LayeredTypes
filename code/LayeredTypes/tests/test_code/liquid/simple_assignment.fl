@@ -2,5 +2,8 @@
 x :: liquid :: {v:Int | v > 5}
 y :: liquid :: {w:Int | w > 0}
 
-x := 10
-y := x
+let x := 10 in {
+    let y := x in {
+        y
+    }
+}
