@@ -8,8 +8,23 @@ from aeon.typing.context import EmptyContext, VariableBinder
 from aeon.typing.entailment import entailment
 from aeon.verification.horn import solve
 from aeon.verification.sub import sub
+from compiler.Exceptions import TypecheckException
 from compiler.transformers.CreateAnnotatedTree import AnnotatedTree, make_annotated_tree
-from aeon.frontend.parser import mk_parser
+
+class LiquidSubtypeException(TypecheckException):
+    """Exception that will be raised when during liquid typechecking a subtype check fails.
+
+    Attributes:
+        left_type -- the left type of the subtype check
+        right_type -- the right type of the subtype check
+        context -- the context in which the subtype check failed
+    """
+    def __init__(self, left_type, right_type, context, line, column):
+        self.left_type = left_type
+        self.right_type = right_type
+        self.context = context
+        super().__init__(f"{left_type} is not a subtype of {right_type} (Context: {context})", line, column)
+        pass
 
 class LiquidLayer(lark.visitors.Interpreter):
     def __init__(self):

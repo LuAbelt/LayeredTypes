@@ -1,6 +1,7 @@
 import unittest
 
-from layer_implementations.state import ArgumentState
+from compiler.Exceptions import LayerException
+from layer_implementations.state import StateError as StateError, ArgumentState
 from tests.utils import typecheck_correct_file, get_compiler, full_path
 
 
@@ -12,8 +13,14 @@ class StateLayer(unittest.TestCase):
         compiler = get_compiler(layer_path=full_path("/../layer_implementations"))
         src_file = full_path("/test_code/state/simple_state_remove.fl")
 
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
+
+        # self.assertIsInstance(context.exception.original_exception, StateError)
+        e = context.exception.original_exception
+        self.assertEqual(context.exception.layer_name, "state")
+        self.assertEqual(e.lineno, 11)
+        self.assertEqual(e.offset, 1)
 
     def test_simple_state_assign(self):
         typecheck_correct_file(self, "/test_code/state/simple_state_assign.fl")
@@ -25,15 +32,27 @@ class StateLayer(unittest.TestCase):
         compiler = get_compiler(layer_path=full_path("/../layer_implementations"))
         src_file = full_path("/test_code/state/state_transition_fail.fl")
 
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
+
+        # self.assertIsInstance(context.exception.original_exception, StateError)
+        e = context.exception.original_exception
+        self.assertEqual(context.exception.layer_name, "state")
+        self.assertEqual(e.lineno, 8)
+        self.assertEqual(e.offset, 1)
 
     def test_state_transition_no_before(self):
         compiler = get_compiler(layer_path=full_path("/../layer_implementations"))
         src_file = full_path("/test_code/state/state_transition_no_before.fl")
 
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
+
+        # self.assertIsInstance(context.exception.original_exception, StateError)
+        e = context.exception.original_exception
+        self.assertEqual(context.exception.layer_name, "state")
+        self.assertEqual(e.lineno, 2)
+        self.assertEqual(e.offset, 1)
 
     def test_function_return_state(self):
         typecheck_correct_file(self, "/test_code/state/function_return_state.fl")
@@ -45,8 +64,15 @@ class StateLayer(unittest.TestCase):
         compiler = get_compiler(layer_path=full_path("/../layer_implementations"))
         src_file = full_path("/test_code/state/function_argument_state_fail.fl")
 
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
+
+        # self.assertIsInstance(context.exception.original_exception, StateError)
+        e = context.exception.original_exception
+        self.assertEqual(context.exception.layer_name, "state")
+        self.assertEqual(e.lineno, 7)
+        self.assertEqual(e.offset, 1)
+
 
     def test_function_transition_state(self):
         typecheck_correct_file(self, "/test_code/state/function_transition_state.fl")
@@ -61,8 +87,15 @@ class StateLayer(unittest.TestCase):
         compiler = get_compiler(layer_path=full_path("/../layer_implementations"))
         src_file = full_path("/test_code/state/function_def_shadows_outer_state_fail.fl")
 
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
+
+        # self.assertIsInstance(context.exception.original_exception, StateError)
+        e = context.exception.original_exception
+        self.assertEqual(context.exception.layer_name, "state")
+        self.assertEqual(e.lineno, 10)
+        self.assertEqual(e.offset, 5)
+
 
 class ArgumentStateParsing(unittest.TestCase):
     def assertEmpty(self, l):

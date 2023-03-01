@@ -14,7 +14,7 @@ def emptyCall():
     return 1337
 
 def twoArgs(first, second):
-    return first + second
+    return [first , second]
 
 def threeArgs(first, second, third):
     return [first, second, third]

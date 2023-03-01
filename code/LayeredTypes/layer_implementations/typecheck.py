@@ -1,6 +1,7 @@
 import lark
 import igraph
 
+from compiler.Exceptions import TypecheckException, WrongArgumentCountException
 from compiler.transformers.CreateAnnotatedTree import AnnotatedTree
 
 
@@ -57,14 +58,14 @@ def typecheck(tree):
             identifier_type = tree.get_layer_annotation("types",identifier, "type")
 
             if identifier_type is None:
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: No type defined for '{identifier}'.")
+                raise TypecheckException(f"No type defined for '{identifier}'.", tree.meta.line, tree.meta.column)
 
             identifier_type = identifier_type[-1]
 
             value_type = self.visit(tree.children[1])
 
             if not self.__is_convertable(value_type, identifier_type):
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot assign value of type {value_type} to variable of type {identifier_type}")
+                raise TypecheckException(f"Cannot assign value of type {value_type} to variable of type {identifier_type}", tree.meta.line, tree.meta.column)
 
         def ident(self, tree):
             # We do not need to look up the type in the annotations, because they are equal to the variable_types
@@ -73,7 +74,7 @@ def typecheck(tree):
             variable_types = tree.get_layer_annotation("types",identifier, "type")
 
             if variable_types is None:
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for variable '{identifier}' is not defined")
+                raise TypecheckException(f"Type for variable '{identifier}' is not defined", tree.meta.line, tree.meta.column)
 
             return variable_types[-1]
 
@@ -104,7 +105,7 @@ def typecheck(tree):
                 subtypes = [t.strip() for t in typecheck_str.split("<:")]
 
                 if len(subtypes) < 2:
-                    raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Invalid subtyping definition")
+                    raise TypecheckException(f"Invalid subtyping definition", tree.meta.line, tree.meta.column)
 
                 self.__add_type_to_graph(subtypes[0])
                 for i in range(1, len(subtypes)):
@@ -134,19 +135,19 @@ def typecheck(tree):
 
                     return lhs_type
 
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot perform arithmetic operation on types {lhs_type} and {rhs_type}")
+                raise TypecheckException(f"Cannot perform arithmetic operation on types {lhs_type} and {rhs_type}", tree.meta.line, tree.meta.column)
 
             if op in {"==", "!=", "<", ">", "<=", ">="}:
                 if self.__is_convertable(lhs_type, rhs_type) or self.__is_convertable(rhs_type, lhs_type):
                     return "__logical"
 
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot compare types {lhs_type} and {rhs_type}")
+                raise TypecheckException(f"Cannot compare types {lhs_type} and {rhs_type}", tree.meta.line, tree.meta.column)
 
             if op in {"&&", "||"}:
                 if self.__is_convertable(lhs_type, "__logical") and self.__is_convertable(rhs_type, "__logical"):
                     return "__logical"
 
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot perform logical operation on types {lhs_type} and {rhs_type}")
+                raise TypecheckException(f"Cannot perform logical operation on types {lhs_type} and {rhs_type}", tree.meta.line, tree.meta.column)
 
         def fun_call(self, tree):
             fun_identifier = tree.children[0].value
@@ -154,22 +155,19 @@ def typecheck(tree):
             fun_types = tree.get_layer_annotation("types",fun_identifier,"fun_type")
 
             if fun_types is None:
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for function {fun_identifier} is not defined")
+                raise TypecheckException(f"Type for function {fun_identifier} is not defined", tree.meta.line, tree.meta.column)
 
             expected_arg_types = fun_types[:-1]
             actual_arg_types = [self.visit(child) for child in tree.children[1:]]
 
             if len(expected_arg_types) != len(actual_arg_types):
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}:"
-                                f" Function {fun_identifier} expects {len(expected_arg_types)} "
-                                f"arguments, but {len(actual_arg_types)} were given")
+                raise WrongArgumentCountException(fun_identifier, len(expected_arg_types), len(actual_arg_types) , tree.meta.line, tree.meta.column)
 
             for i in range(len(expected_arg_types)):
                 if not self.__is_convertable(actual_arg_types[i],expected_arg_types[i]):
-                    raise TypeError(f"{tree.meta.line}:{tree.meta.column}: "
-                                    f"Cannot pass argument of type {actual_arg_types[i]}"
+                    raise TypecheckException(f"Cannot pass argument of type {actual_arg_types[i]}"
                                     f" to function {fun_identifier} expecting argument of"
-                                    f" type {expected_arg_types[i]}")
+                                    f" type {expected_arg_types[i]}", tree.meta.line, tree.meta.column)
 
             return_type = fun_types[-1]
 
@@ -181,14 +179,14 @@ def typecheck(tree):
             variable_types = tree.get_layer_annotation("types",identifier,"type")
 
             if variable_types is None:
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Type for variable {identifier} is not defined")
+                raise TypecheckException(f"Type for variable {identifier} is not defined", tree.meta.line, tree.meta.column)
 
             value_type = self.visit(tree.children[1])
 
             identifier_type = variable_types[-1]
 
             if not self.__is_convertable(value_type, identifier_type):
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Cannot assign value of type {value_type} to variable of type {identifier_type}")
+                raise TypecheckException(f"Cannot assign value of type {value_type} to variable of type {identifier_type}", tree.meta.line, tree.meta.column)
 
             self.visit(tree.children[2])
 
@@ -196,7 +194,7 @@ def typecheck(tree):
             condition_type = self.visit(tree.children[0])
 
             if not self.__is_convertable(condition_type, "__logical"):
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}: Condition of if statement must be of type bool")
+                raise TypecheckException(f"Condition of if statement must be of type bool", tree.meta.line, tree.meta.column)
 
             self.visit(tree.children[1])
 

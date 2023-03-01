@@ -1,5 +1,6 @@
 import lark
 
+from compiler.Exceptions import TypecheckException, WrongArgumentCountException
 from compiler.transformers.CreateAnnotatedTree import AnnotatedTree
 
 
@@ -47,8 +48,8 @@ def typecheck(tree):
                 self.variable_types[identifier] = annotated_type
 
             if tree.get_layer_annotation(layer_name,identifier,dict_key) is not None:
-                raise TypeError(f"Type for identifier"
-                                f" {identifier} was already defined previously")
+                raise TypecheckException(f"Type for identifier"
+                                f" {identifier} was already defined previously", tree.meta.line, tree.meta.column)
 
         def fun_def(self, tree):
             self.__annotate_types(tree)
@@ -58,16 +59,13 @@ def typecheck(tree):
             fun_type = tree.get_layer_annotation("types",fun_identifier,"fun_type")
 
             if fun_type is None:
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}:"
-                                f" Function {fun_identifier} has no defined type")
+                raise TypecheckException(f" Function {fun_identifier} has no defined type.", tree.meta.line, tree.meta.column)
 
             expected_arg_types = fun_type[:-1]
             arg_names = [child.value for child in tree.children[1:-1]]
 
             if len(expected_arg_types) != len(arg_names):
-                raise TypeError(f"{tree.meta.line}:{tree.meta.column}:"
-                                f" Function {fun_identifier} expects {len(expected_arg_types)} "
-                                f"arguments, but {len(arg_names)} were given")
+                raise WrongArgumentCountException(fun_identifier,len(expected_arg_types),len(arg_names), tree.meta.line, tree.meta.column)
 
             # Store the old variable types as local variables may shadow global variables
             old_frame = self.variable_types.copy()

@@ -18,21 +18,15 @@ class TypecheckException(SyntaxError):
         Is a subclass of SyntaxError, so that it can contain the exact error position.
     """
     def __init__(self, message, line, column):
-        super(TypecheckException, self).__init__(message)
+        super(TypecheckException, self).__init__(f"{line}:{column}: {message}")
         self.lineno = line
         self.offset = column
 
-class LiquidSubtypeException(TypecheckException):
-    """Exception that will be raised when during liquid typechecking a subtype check fails.
-
-    Attributes:
-        left_type -- the left type of the subtype check
-        right_type -- the right type of the subtype check
-        context -- the context in which the subtype check failed
+class WrongArgumentCountException(TypecheckException):
+    """Exception that will be raised when a function is called with the wrong number of arguments.
     """
-    def __init__(self, left_type, right_type, context, line, column):
-        self.left_type = left_type
-        self.right_type = right_type
-        self.context = context
-        super().__init__(f"{left_type} is not a subtype of {right_type} (Context: {context})", line, column)
-        pass
+    def __init__(self, fun_name, expected, actual, line, column):
+        super(WrongArgumentCountException, self).__init__(
+            f"Wrong number of arguments for function {fun_name}. Expected {expected}, got {actual}.",
+            line, column
+        )

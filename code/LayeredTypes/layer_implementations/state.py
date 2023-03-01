@@ -4,6 +4,7 @@ from copy import copy
 
 import lark.visitors
 
+from compiler.Exceptions import TypecheckException, WrongArgumentCountException
 from compiler.transformers.CreateAnnotatedTree import AnnotatedTree
 
 
@@ -54,7 +55,9 @@ class ArgumentState:
         states.difference_update(states_to_remove)
         states.update(states_to_add)
 
-
+class StateError(TypecheckException):
+    def __init__(self, msg, line, column):
+        super().__init__(msg, line, column)
 class StateLayer(lark.visitors.Interpreter):
     def __init__(self):
         self.__states = defaultdict(set)
@@ -87,8 +90,8 @@ class StateLayer(lark.visitors.Interpreter):
             if state is None:
                 state = set()
             if not arg_state.check_required_states(state):
-                raise TypeError(
-                    f"{tree.meta.line}:{tree.meta.column}: Identifier {identifier} does not have the required state.")
+                raise StateError(
+                    f"Identifier {identifier} does not have the required state.", tree.meta.line, tree.meta.column)
             state = copy(state)
             arg_state.apply_state_transitions(state)
             self.__states[identifier] = state
@@ -108,14 +111,13 @@ class StateLayer(lark.visitors.Interpreter):
 
         # Check that the number of arguments matches
         if len(tree.children[1:]) != len(self.__function_states[fun_identifier]) - 1:
-            raise TypeError(
-                f"{tree.meta.line}:{tree.meta.column}: Function {fun_identifier} expects {len(self.__function_states[fun_identifier]) - 1} arguments but got {len(tree.children[1:])}")
+            raise WrongArgumentCountException(fun_identifier, len(self.__function_states[fun_identifier]) - 1,
+                                              len(tree.children[1:]), tree.meta.line, tree.meta.column)
 
         # Check that each argument has the required states
         for i, arg in enumerate(tree.children[1:]):
             if not self.__function_states[fun_identifier][i].check_required_states(self.visit(arg)):
-                raise TypeError(
-                    f"{tree.meta.line}:{tree.meta.column}: Function {fun_identifier} was called with invalid state for argument {i}.")
+                raise StateError(f"Argument #{i} of function {fun_identifier} has the wrong state.", tree.meta.line, tree.meta.column)
 
         # Apply the state transitions
         for i, arg in enumerate(tree.children[1:]):
@@ -152,8 +154,11 @@ class StateLayer(lark.visitors.Interpreter):
         if fun_identifier in self.__function_states:
             # Check that the number of arguments matches
             if len(arg_names) != len(self.__function_states[fun_identifier]) - 1:
-                raise TypeError(
-                    f"{tree.meta.line}:{tree.meta.column}: Function {fun_identifier} was defined with a different number of arguments than the state definition.")
+                raise WrongArgumentCountException(fun_identifier,
+                                                  len(self.__function_states[fun_identifier]) - 1,
+                                                  len(arg_names),
+                                                  tree.meta.line,
+                                                  tree.meta.column)
 
             # Add the states of the arguments to the function definition
             for i, arg in enumerate(arg_names):
