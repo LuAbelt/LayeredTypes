@@ -1,9 +1,10 @@
 x::types:: bool
+function :: types :: -> None
 numTypes::typecheck:: int short long byte
 logicalTypes::typecheck:: bool
 subtype::typecheck:: byte <: short <: int <: long
 
 function {
     -- This should not typecheck as the type of x is only defined in the outer scope
-    x
+    x := True
 }

@@ -9,4 +9,4 @@ function {
     x
 }
 -- This should not typecheck as the type of x is only known within the function
-x
+x := True

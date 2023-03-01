@@ -1,5 +1,6 @@
 import unittest
 
+from compiler.Exceptions import LayerException
 from tests.utils import get_compiler, full_path, typecheck_correct_file
 
 
@@ -8,8 +9,13 @@ class Typechecking(unittest.TestCase):
         compiler = get_compiler(layer_path = full_path("/../layer_implementations"))
         src_file = full_path("/test_code/typechecking/assign_bool_to_num.fl")
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
+
+        self.assertEqual(context.exception.layer_name, "typecheck")
+        e = context.exception.original_exception
+        self.assertEqual(e.lineno, 8)
+        self.assertEqual(e.offset, 1)
 
     def test_bool_assign(self):
         typecheck_correct_file(self, "/test_code/typechecking/bool_assign.fl")
@@ -24,8 +30,13 @@ class Typechecking(unittest.TestCase):
         compiler = get_compiler(layer_path = full_path("/../layer_implementations"))
         src_file = full_path("/test_code/typechecking/narrowing_assign.fl")
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
+
+        self.assertEqual(context.exception.layer_name, "typecheck")
+        e = context.exception.original_exception
+        self.assertEqual(e.lineno, 10)
+        self.assertEqual(e.offset, 1)
 
     def test_simple_bool(self):
         typecheck_correct_file(self, "/test_code/typechecking/simple_bool.fl")
@@ -40,8 +51,13 @@ class Typechecking(unittest.TestCase):
         compiler = get_compiler(layer_path = full_path("/../layer_implementations"))
         src_file = full_path("/test_code/typechecking/wrong_arg_type.fl")
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
+
+        self.assertEqual(context.exception.layer_name, "typecheck")
+        e = context.exception.original_exception
+        self.assertEqual(e.lineno, 7)
+        self.assertEqual(e.offset, 1)
 
     def test_bin_ops(self):
         typecheck_correct_file(self, "/test_code/typechecking/bin_ops.fl")
@@ -56,21 +72,25 @@ class Typechecking(unittest.TestCase):
         compiler = get_compiler(layer_path = full_path("/../layer_implementations"))
         src_file = full_path("/test_code/typechecking/type_only_defined_outer_scope.fl")
 
-        with self.assertRaises(SyntaxError) as context:
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
 
-        self.assertEqual(8, context.exception.lineno)
-        self.assertEqual(5, context.exception.offset)
+        self.assertEqual(context.exception.layer_name, "typecheck")
+        e = context.exception.original_exception
+        self.assertEqual(9, e.lineno)
+        self.assertEqual(5, e.offset)
 
     def test_type_only_defined_inner_scope(self):
         compiler = get_compiler(layer_path = full_path("/../layer_implementations"))
         src_file = full_path("/test_code/typechecking/type_only_defined_inner_scope.fl")
 
-        with self.assertRaises(SyntaxError) as context:
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
 
-        self.assertEqual(12, context.exception.lineno)
-        self.assertEqual(1, context.exception.offset)
+        self.assertEqual(context.exception.layer_name, "typecheck")
+        e = context.exception.original_exception
+        self.assertEqual(12, e.lineno)
+        self.assertEqual(1, e.offset)
 
     def test_if_properly_typed(self):
         typecheck_correct_file(self, "/test_code/typechecking/if_properly_typed.fl")
@@ -79,5 +99,10 @@ class Typechecking(unittest.TestCase):
         compiler = get_compiler(layer_path = full_path("/../layer_implementations"))
         src_file = full_path("/test_code/typechecking/if_illegal_typed.fl")
 
-        with self.assertRaises(TypeError) as context:
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
+
+        self.assertEqual(context.exception.layer_name, "typecheck")
+        e = context.exception.original_exception
+        self.assertEqual(e.lineno, 5)
+        self.assertEqual(e.offset, 1)
