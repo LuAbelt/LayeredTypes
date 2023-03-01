@@ -1,0 +1,19 @@
+-- Slightly more complex example for a refined assignment
+x :: liquid :: {v: Int | v > 0}
+y :: liquid :: {v: Int | v > 5}
+
+let x := 10 in {
+    -- This works because we know a more specific type for x
+    -- Due to the earlier assignment, the type of x is now {v: Int | v == 10}
+    let y := x in {
+        y
+    }
+}
+
+-- Create a new let binding for x where it is 3
+let x := 3 in {
+    -- This should now fail, since 3 is not greater than 5
+    let y := x in {
+        y
+    }
+}

@@ -1,0 +1,10 @@
+x :: liquid :: {x:Int | x > 0}
+
+let x := 1 in {
+    -- Define a refinement for y
+    y :: liquid :: {y:Int | y > 0}
+    let y := 2 in {
+        x + y
+    }
+}
+

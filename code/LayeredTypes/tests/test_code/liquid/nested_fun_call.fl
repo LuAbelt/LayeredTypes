@@ -1,0 +1,9 @@
+f :: liquid :: {x:Int | x > 0} -> {y:Int :y>x}
+g :: liquid :: {x:Int | x > 2} -> {y:Int :y>x}
+
+x :: liquid :: {x:Int | x == 3}
+let x := 3 in {
+    let y := f(g(x)) in {
+        y
+    }
+}

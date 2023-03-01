@@ -1,0 +1,14 @@
+-- Test case for calling a liquid function with two arguments that depend on one another
+
+twoArgs :: liquid :: {x:Int | x > 0} -> {y:Int | y > x} -> {z:Int | z > y}
+
+x :: liquid :: {x:Int | x > 0}
+y :: liquid :: {x:Int | x > 10}
+
+let x := 1 in {
+    let y := 11 in {
+        let z := twoArgs(x, y) in {
+            z
+        }
+    }
+}
