@@ -5,7 +5,7 @@ from warnings import warn
 import lark
 from pathlib import Path
 
-
+from compiler.Exceptions import LayerException
 from compiler.transformers.RemoveTokens import RemoveTokens
 from layers.Layer import Layer
 from layers.LayerImplWrapper import LayerImplWrapper
@@ -105,7 +105,10 @@ class LayeredCompiler:
         # Incrementally typecheck each layer based on their topological order
         for layer_id in topo_order:
             layer_handle = self.layers[layer_id]
-            tree = layer_handle.typecheck(tree)
+            try:
+                tree = layer_handle.typecheck(tree)
+            except Exception as e:
+                raise LayerException(layer_id,e)
 
         return tree
 
