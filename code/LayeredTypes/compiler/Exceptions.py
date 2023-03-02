@@ -30,3 +30,13 @@ class WrongArgumentCountException(TypecheckException):
             f"Wrong number of arguments for function {fun_name}. Expected {expected}, got {actual}.",
             line, column
         )
+
+class FeatureNotSupportedError(TypecheckException):
+    """Exception that will be raised when a feature is not supported by a typecheck layer.
+
+    For example, certain layers might not support assignments as they would complicate the typechecking.
+    """
+    def __init__(self, msg, line, column):
+        super(FeatureNotSupportedError, self).__init__(
+            msg, line, column
+        )

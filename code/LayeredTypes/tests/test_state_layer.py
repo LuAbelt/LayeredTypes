@@ -16,8 +16,9 @@ class StateLayer(unittest.TestCase):
         with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
 
-        # self.assertIsInstance(context.exception.original_exception, StateError)
         e = context.exception.original_exception
+        # We can't use isinstance here because as the layers are loaded dynamically, the class is not the same to Python
+        self.assertEqual(e.__class__.__name__, "StateError")
         self.assertEqual(context.exception.layer_name, "state")
         self.assertEqual(e.lineno, 11)
         self.assertEqual(e.offset, 1)
@@ -35,8 +36,8 @@ class StateLayer(unittest.TestCase):
         with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
 
-        # self.assertIsInstance(context.exception.original_exception, StateError)
         e = context.exception.original_exception
+        self.assertEqual(e.__class__.__name__, "StateError")
         self.assertEqual(context.exception.layer_name, "state")
         self.assertEqual(e.lineno, 8)
         self.assertEqual(e.offset, 1)
@@ -50,6 +51,7 @@ class StateLayer(unittest.TestCase):
 
         # self.assertIsInstance(context.exception.original_exception, StateError)
         e = context.exception.original_exception
+        self.assertEqual(e.__class__.__name__, "StateError")
         self.assertEqual(context.exception.layer_name, "state")
         self.assertEqual(e.lineno, 2)
         self.assertEqual(e.offset, 1)
@@ -69,6 +71,7 @@ class StateLayer(unittest.TestCase):
 
         # self.assertIsInstance(context.exception.original_exception, StateError)
         e = context.exception.original_exception
+        self.assertEqual(e.__class__.__name__, "StateError")
         self.assertEqual(context.exception.layer_name, "state")
         self.assertEqual(e.lineno, 7)
         self.assertEqual(e.offset, 1)
@@ -92,6 +95,7 @@ class StateLayer(unittest.TestCase):
 
         # self.assertIsInstance(context.exception.original_exception, StateError)
         e = context.exception.original_exception
+        self.assertEqual(e.__class__.__name__, "StateError")
         self.assertEqual(context.exception.layer_name, "state")
         self.assertEqual(e.lineno, 10)
         self.assertEqual(e.offset, 5)

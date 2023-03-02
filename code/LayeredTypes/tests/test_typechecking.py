@@ -13,7 +13,9 @@ class Typechecking(unittest.TestCase):
             compiler.typecheck(src_file)
 
         self.assertEqual(context.exception.layer_name, "typecheck")
+
         e = context.exception.original_exception
+        self.assertEqual(e.__class__.__name__, "TypecheckException")
         self.assertEqual(e.lineno, 8)
         self.assertEqual(e.offset, 1)
 
@@ -34,7 +36,9 @@ class Typechecking(unittest.TestCase):
             compiler.typecheck(src_file)
 
         self.assertEqual(context.exception.layer_name, "typecheck")
+
         e = context.exception.original_exception
+        self.assertEqual(e.__class__.__name__, "TypecheckException")
         self.assertEqual(e.lineno, 10)
         self.assertEqual(e.offset, 1)
 
@@ -55,7 +59,9 @@ class Typechecking(unittest.TestCase):
             compiler.typecheck(src_file)
 
         self.assertEqual(context.exception.layer_name, "typecheck")
+
         e = context.exception.original_exception
+        self.assertEqual(e.__class__.__name__, "TypecheckException")
         self.assertEqual(e.lineno, 7)
         self.assertEqual(e.offset, 1)
 
@@ -76,7 +82,9 @@ class Typechecking(unittest.TestCase):
             compiler.typecheck(src_file)
 
         self.assertEqual(context.exception.layer_name, "typecheck")
+
         e = context.exception.original_exception
+        self.assertEqual(e.__class__.__name__, "TypecheckException")
         self.assertEqual(9, e.lineno)
         self.assertEqual(5, e.offset)
 
@@ -88,7 +96,9 @@ class Typechecking(unittest.TestCase):
             compiler.typecheck(src_file)
 
         self.assertEqual(context.exception.layer_name, "typecheck")
+
         e = context.exception.original_exception
+        self.assertEqual(e.__class__.__name__, "TypecheckException")
         self.assertEqual(12, e.lineno)
         self.assertEqual(1, e.offset)
 
@@ -103,6 +113,8 @@ class Typechecking(unittest.TestCase):
             compiler.typecheck(src_file)
 
         self.assertEqual(context.exception.layer_name, "typecheck")
+
         e = context.exception.original_exception
+        self.assertEqual(e.__class__.__name__, "TypecheckException")
         self.assertEqual(e.lineno, 5)
         self.assertEqual(e.offset, 1)
