@@ -69,24 +69,6 @@ class LiquidLayer(lark.visitors.Interpreter):
     def assign(self, tree: AnnotatedTree):
         raise FeatureNotSupportedError("Assignments are not supported in the liquid layer. Only let bindings are supported.", tree.meta.line, tree.meta.column)
 
-        lhs_type = self.visit(tree.children[0])
-        rhs_type, rhs_ctx = self.visit(tree.children[1])
-
-        c = sub(rhs_type, lhs_type)
-
-        ctx = tree.get_layer_annotation("liquid", "contexts", "context")
-
-        if rhs_ctx:
-            ctx = rhs_ctx
-
-        if not entailment(ctx, c):
-            raise Exception("Could not assign value of type " + str(rhs_type) + " to variable of type " + str(lhs_type))
-
-        # Update the context and types
-        ctx = VariableBinder(ctx, tree.children[0].children[0].value, rhs_type)
-        self.__ctx = ctx
-        self.__types[tree.children[0].children[0].value] = rhs_type
-
     def ident(self, tree):
         identifier = tree.children[0].value
         id_type = tree.get_layer_annotation("liquid", identifier, "type")
