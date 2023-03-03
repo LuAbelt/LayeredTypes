@@ -34,11 +34,19 @@ class TestLiquidLayer(unittest.TestCase):
         compiler = get_compiler(layer_path="../layer_implementations")
         src_file = full_path("/test_code/liquid/simple_assignment_infer_fail.fl")
 
-        with self.assertRaises(LayerException):
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
 
-        # TODO: Check exact error
-        self.assertTrue(False)
+        self.assertEqual("liquid", context.exception.layer_name)
+        e = context.exception.original_exception
+        self.assertEqual("LiquidSubtypeException", e.__class__.__name__)
+        self.assertEqual(16, e.lineno)
+        self.assertEqual(5, e.offset)
+
+        type_expected = parse_type("{v:Int | v > 5}")
+        type_actual = parse_type("{v:Int | v == 3}")
+        self.assertEqual(type_actual, e.type_actual)
+        self.assertEqual(type_expected, e.type_expected)
 
     def test_fun_call_noArgs(self):
         typecheck_correct_file(self, "/test_code/liquid/fun_call_noArgs.fl")
