@@ -84,16 +84,21 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual("LiquidTypeUndefinedError", e.__class__.__name__)
         self.assertEqual(12, e.lineno)
         self.assertEqual(1, e.offset)
+        self.assertEqual("y", e.identifier)
 
     def test_ident_type_undefined(self):
         compiler = get_compiler(layer_path="../layer_implementations")
         src_file = full_path("/test_code/liquid/ident_type_undefined.fl")
 
-        with self.assertRaises(LayerException):
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file,check_cf=False)
 
-        # TODO: Check exact error
-        self.assertTrue(False)
+        self.assertEqual("liquid", context.exception.layer_name)
+        e = context.exception.original_exception
+        self.assertEqual("LiquidTypeUndefinedError", e.__class__.__name__)
+        self.assertEqual(3, e.lineno)
+        self.assertEqual(1, e.offset)
+        self.assertEqual("x", e.identifier)
 
     def test_fun_type_undefined(self):
         compiler = get_compiler(layer_path="../layer_implementations")
