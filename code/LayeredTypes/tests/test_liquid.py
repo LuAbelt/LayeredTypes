@@ -118,8 +118,11 @@ class TestLiquidLayer(unittest.TestCase):
         compiler = get_compiler(layer_path="../layer_implementations")
         src_file = full_path("/test_code/liquid/assign_fail.fl")
 
-        with self.assertRaises(LayerException):
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
 
-        # TODO: Check exact error
-        self.assertTrue(False)
+        self.assertEqual("liquid", context.exception.layer_name)
+        e = context.exception.original_exception
+        self.assertEqual("FeatureNotSupportedError", e.__class__.__name__)
+        self.assertEqual(4, e.lineno)
+        self.assertEqual(1, e.offset)
