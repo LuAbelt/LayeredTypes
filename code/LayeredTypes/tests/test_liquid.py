@@ -1,5 +1,6 @@
 import unittest
 
+from aeon.frontend.parser import mk_parser, parse_type
 from compiler.Exceptions import LayerException
 from tests.utils import parse_file, typecheck_correct_file, get_compiler, full_path
 
@@ -15,11 +16,19 @@ class TestLiquidLayer(unittest.TestCase):
         compiler = get_compiler(layer_path="../layer_implementations")
         src_file = full_path("/test_code/liquid/simple_assignment_fail.fl")
 
-        with self.assertRaises(LayerException):
+        with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
 
-        # TODO: Check exact error
-        self.assertTrue(False)
+        self.assertEqual("liquid", context.exception.layer_name)
+        e = context.exception.original_exception
+        self.assertEqual("LiquidSubtypeException", e.__class__.__name__)
+        self.assertEqual(4, e.lineno)
+        self.assertEqual(1, e.offset)
+
+        type_expected = parse_type("{c:Int | c > 0}")
+        type_actual = parse_type("{v:Int | v == 0}")
+        self.assertEqual(type_actual, e.type_actual)
+        self.assertEqual(type_expected, e.type_expected)
 
     def test_simple_assignment_infer_fail(self):
         compiler = get_compiler(layer_path="../layer_implementations")

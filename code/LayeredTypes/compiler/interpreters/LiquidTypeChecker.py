@@ -21,11 +21,11 @@ class LiquidSubtypeException(TypecheckException):
         right_type -- the right type of the subtype check
         context -- the context in which the subtype check failed
     """
-    def __init__(self, msg, left_type, right_type, context, line, column):
-        self.left_type = left_type
-        self.right_type = right_type
+    def __init__(self, msg, type_actual, type_expected, context, line, column):
+        self.type_actual = type_actual
+        self.type_expected = type_expected
         self.context = context
-        super().__init__(f"{msg}:\n{left_type} is not a subtype of {right_type} (Context: {context})", line, column)
+        super().__init__(f"{msg}:\n{type_actual} is not a subtype of {type_expected} (Context: {context})", line, column)
         pass
 
 class LiquidTypeUndefinedError(TypecheckException):
