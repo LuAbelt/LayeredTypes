@@ -126,3 +126,7 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual("FeatureNotSupportedError", e.__class__.__name__)
         self.assertEqual(4, e.lineno)
         self.assertEqual(1, e.offset)
+
+    def test_fun_def(self):
+        #TODO
+        self.assertTrue(False)
