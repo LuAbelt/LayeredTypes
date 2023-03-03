@@ -1,3 +1,4 @@
+foo :: liquid :: {v: Int | v > 0}
 -- The let should raise an error as we have no refinement type for x
 let x := 1 in {
     x

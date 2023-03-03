@@ -12,7 +12,7 @@ class TestLiquidLayer(unittest.TestCase):
         typecheck_correct_file(self, "/test_code/liquid/simple_assignment_infer.fl")
 
     def test_simple_assignment_fail(self):
-        compiler = get_compiler()
+        compiler = get_compiler(layer_path="../layer_implementations")
         src_file = full_path("/test_code/liquid/simple_assignment_fail.fl")
 
         with self.assertRaises(LayerException):
@@ -22,7 +22,7 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertTrue(False)
 
     def test_simple_assignment_infer_fail(self):
-        compiler = get_compiler()
+        compiler = get_compiler(layer_path="../layer_implementations")
         src_file = full_path("/test_code/liquid/simple_assignment_infer_fail.fl")
 
         with self.assertRaises(LayerException):
@@ -56,37 +56,37 @@ class TestLiquidLayer(unittest.TestCase):
         typecheck_correct_file(self, "/test_code/liquid/let_inner_layer.fl")
 
     def test_let_inner_layer_fail(self):
-        compiler = get_compiler()
+        compiler = get_compiler(layer_path="../layer_implementations")
         src_file = full_path("/test_code/liquid/let_inner_layer_fail.fl")
 
         with self.assertRaises(LayerException):
-            compiler.typecheck(src_file)
+            compiler.typecheck(src_file, False)
 
         # TODO: Check exact error
         self.assertTrue(False)
 
     def test_ident_type_undefined(self):
-        compiler = get_compiler()
+        compiler = get_compiler(layer_path="../layer_implementations")
         src_file = full_path("/test_code/liquid/ident_type_undefined.fl")
 
         with self.assertRaises(LayerException):
-            compiler.typecheck(src_file)
+            compiler.typecheck(src_file,check_cf=False)
 
         # TODO: Check exact error
         self.assertTrue(False)
 
     def test_fun_type_undefined(self):
-        compiler = get_compiler()
+        compiler = get_compiler(layer_path="../layer_implementations")
         src_file = full_path("/test_code/liquid/fun_type_undefined.fl")
 
         with self.assertRaises(LayerException):
-            compiler.typecheck(src_file)
+            compiler.typecheck(src_file,check_cf=False)
 
         # TODO: Check exact error
         self.assertTrue(False)
 
     def test_assign_fail(self):
-        compiler = get_compiler()
+        compiler = get_compiler(layer_path="../layer_implementations")
         src_file = full_path("/test_code/liquid/assign_fail.fl")
 
         with self.assertRaises(LayerException):
