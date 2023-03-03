@@ -142,6 +142,10 @@ class LiquidLayer(lark.visitors.Interpreter):
         fun_identifier = tree.children[0].value
 
         expected_arg_types = tree.get_layer_annotation("liquid", fun_identifier, "function_type")
+
+        if expected_arg_types is None:
+            raise LiquidTypeUndefinedError(fun_identifier, tree.meta.line, tree.meta.column)
+
         actual_num_args = len(tree.children) - 1
 
         # Check that the number of arguments is correct
