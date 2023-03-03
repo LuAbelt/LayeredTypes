@@ -71,12 +71,21 @@ class LiquidLayer(lark.visitors.Interpreter):
 
     def ident(self, tree):
         identifier = tree.children[0].value
-        id_type = tree.get_layer_annotation("liquid", identifier, "type")
+
+        # Try to get the type from context if it has already been assigned
+        ctx = tree.get_layer_annotation("liquid", "contexts", "context")
+
+        id_type = ctx.type_of(identifier)
 
         if id_type is None:
+            # Type has not been assigned yet, try to get it from the types dictionary
+            id_type = tree.get_layer_annotation("liquid", identifier, "type")
+
+        if id_type is None:
+            # Type is still undefined, raise an error
             raise LiquidTypeUndefinedError(identifier, tree.meta.line, tree.meta.column)
 
-        return id_type, tree.get_layer_annotation("liquid", "contexts", "context")
+        return id_type, ctx
 
     def layer(self, tree):
         identifier = tree.children[0].children[0].value
@@ -150,7 +159,12 @@ class LiquidLayer(lark.visitors.Interpreter):
             c = sub(arg_type, expected_arg_types[i])
 
             if not entailment(context, c):
-                raise LiquidSubtypeException(arg_type, expected_arg_types[i], tree.meta.line, tree.meta.column)
+                raise LiquidSubtypeException( f"Error in function call to {fun_identifier}, argument {i+1}",
+                                             arg_type,
+                                             expected_arg_types[i],
+                                             context,
+                                             tree.meta.line,
+                                             tree.meta.column)
 
             # We need to add the type of the argument to the context
             # As other refinements may reference it
@@ -169,6 +183,7 @@ class LiquidLayer(lark.visitors.Interpreter):
                 expected_arg_types[j] = substitution_in_type(expected_arg_types[j], Var(free_var_name), original_name)
 
             context = context.with_var(free_var_name, arg_type)
+            self.__ctx = context
 
         return expected_arg_types[-1], context
 
