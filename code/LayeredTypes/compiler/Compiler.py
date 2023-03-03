@@ -40,20 +40,22 @@ class LayeredCompiler:
         self.layers = dict()
         self.interpreter = SimpleInterpreter(self.implementations_file)
 
-    def typecheck(self, input_file):
+    def typecheck(self, input_file, check_cf=True):
         tree = self.parse(input_file)
 
-        self.__typecheck(tree)
+        self.__typecheck(tree, check_cf)
 
         return True
 
-    def __typecheck(self, tree):
+    def __typecheck(self, tree, check_cf=True):
         lv = CollectLayers()
         cf_check = CheckCF(self.interpreter.external_functions_names)
 
         tree = lv.transform(tree)
         tree = AnnotateTree().transform(tree)
-        cf_check.visit(tree)
+
+        if check_cf:
+            cf_check.visit(tree)
 
         layer_graph = {}
         self.layers = {}
