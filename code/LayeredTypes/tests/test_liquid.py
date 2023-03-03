@@ -84,3 +84,13 @@ class TestLiquidLayer(unittest.TestCase):
 
         # TODO: Check exact error
         self.assertTrue(False)
+
+    def test_assign_fail(self):
+        compiler = get_compiler()
+        src_file = full_path("/test_code/liquid/assign_fail.fl")
+
+        with self.assertRaises(LayerException):
+            compiler.typecheck(src_file)
+
+        # TODO: Check exact error
+        self.assertTrue(False)

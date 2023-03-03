@@ -1,0 +1,2 @@
+-- The function call should fail as we have no type defined for oneArg
+oneArg(1)
