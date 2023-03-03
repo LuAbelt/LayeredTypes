@@ -4,6 +4,7 @@ twoArgs :: liquid :: {x:Int | x > 0} -> {y:Int | y > x} -> {z:Int | z > y}
 
 x :: liquid :: {x:Int | x > 0}
 y :: liquid :: {x:Int | x > 10}
+z :: liquid :: {x:Int | x >= 11}
 
 let x := 1 in {
     let y := 11 in {
