@@ -1,0 +1,5 @@
+-- This test checks that liquid function refinements work correctly
+-- Specifically it checks that refinement types can use the same name
+-- as long as the duplicated names are not referenced by other refinements
+
+fun :: liquid :: { v: Int | v > 0 } -> {x: Int | x > v } -> {x: Int | x < v }

@@ -168,8 +168,56 @@ class TestLiquidLayer(unittest.TestCase):
         typecheck_correct_file(self, "/test_code/liquid/fun_def_multiple_args.fl")
 
     def test_fun_def_multiple_args_fail(self):
-        # TODO
-        self.assertTrue(False)
+        compiler = get_compiler(layer_path="layer_implementations")
+        src_file = full_path("/test_code/liquid/fun_def_multiple_args_fail.fl")
+
+        with self.assertRaises(LayerException) as context:
+            compiler.typecheck(src_file)
+
+        self.assertEqual("liquid", context.exception.layer_name)
+        e = context.exception.original_exception
+        self.assertEqual("LiquidSubtypeException", e.__class__.__name__)
+        self.assertEqual(8, e.lineno)
+        self.assertEqual(5, e.offset)
+        type_expected = parse_type("{v:Int | v > 0}")
+        type_actual = parse_type("{v:Int | v >= 0}")
+        self.assertEqual(type_actual, e.type_actual)
+        self.assertEqual(type_expected, e.type_expected)
+
+    def test_fun_def_multiple_args_fail_oncall(self):
+        compiler = get_compiler(layer_path="../layer_implementations")
+        src_file = full_path("/test_code/liquid/fun_def_multiple_args_fail_oncall.fl")
+
+        with self.assertRaises(LayerException) as context:
+            compiler.typecheck(src_file)
+
+        self.assertEqual("liquid", context.exception.layer_name)
+        e = context.exception.original_exception
+        self.assertEqual("LiquidSubtypeException", e.__class__.__name__)
+        self.assertEqual(13, e.lineno)
+        self.assertEqual(1, e.offset)
+        type_expected = parse_type("{v:Int | x > v}")
+        type_actual = parse_type("{v:Int | v == 1}")
+        self.assertEqual(type_actual, e.type_actual)
+        self.assertEqual(type_expected, e.type_expected)
+
 
     def test_nested_fun_call_multiple_args(self):
         typecheck_correct_file(self, "/test_code/liquid/nested_fun_call_multiple_args.fl")
+
+    def test_liquid_fun_refinement_noref(self):
+        typecheck_correct_file(self, "/test_code/liquid/liquid_fun_refinement_noref.fl")
+
+    def test_liquid_fun_refinement_no_overlap(self):
+        typecheck_correct_file(self, "/test_code/liquid/liquid_fun_refinement_no_overlap.fl")
+
+    def test_liquid_fun_ref_fail(self):
+        compiler = get_compiler(layer_path="layer_implementations")
+        src_file = full_path("/test_code/liquid/liquid_fun_ref_fail.fl")
+
+        with self.assertRaises(LayerException) as context:
+            compiler.typecheck(src_file)
+
+        self.assertEqual("liquid", context.exception.layer_name)
+        e = context.exception.original_exception
+        self.assertTrue(False)

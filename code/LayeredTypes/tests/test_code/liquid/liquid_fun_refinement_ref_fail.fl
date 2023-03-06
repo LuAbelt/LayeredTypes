@@ -1,0 +1,5 @@
+-- This test checks that invalid liquid function refinements are rejected.
+-- An invalid liquid function refinement is one that reuses a variable name that
+-- is later referenced by another refinement.
+
+fun :: liquid :: {v: Int | v == 0} -> {v: Int | v == 10} => {x: Int | x>v}

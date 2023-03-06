@@ -1,0 +1,4 @@
+-- This test is to check that liquid function refinements work correctly
+-- It checks that refinements can use the same variable names as long as they do not reference other variables
+
+fun :: liquid :: {v: Int | v == 0} -> {v : Int | v == 1} -> {v : Int | v == 2 }
