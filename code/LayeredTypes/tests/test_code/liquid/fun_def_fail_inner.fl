@@ -1,0 +1,11 @@
+-- Test case to check if liquid types are correctly propagated into the body of a function
+liquidFun :: liquid :: { v:Int | v >= 0 } -> { v:Int | v > 0 }
+liquidFun x {
+    y :: liquid :: {v:Int | v > 0}
+    -- This assignment fails as x could be 0, while y is expected to be > 0
+    let y := x in {
+        y
+    }
+}
+
+liquidFun(1)

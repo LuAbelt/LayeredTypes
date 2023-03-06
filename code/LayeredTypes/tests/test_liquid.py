@@ -137,14 +137,15 @@ class TestLiquidLayer(unittest.TestCase):
         with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
 
-        #TODO
-        self.assertTrue(False)
-
         self.assertEqual("liquid", context.exception.layer_name)
         e = context.exception.original_exception
         self.assertEqual("LiquidSubtypeException", e.__class__.__name__)
-        self.assertEqual(5, e.lineno)
-        self.assertEqual(1, e.offset)
+        self.assertEqual(6, e.lineno)
+        self.assertEqual(5, e.offset)
+        type_expected = parse_type("{v:Int | v > 0}")
+        type_actual = parse_type("{v:Int | v >= 0}")
+        self.assertEqual(type_actual, e.type_actual)
+        self.assertEqual(type_expected, e.type_expected)
 
     def test_fun_def_fail_oncall(self):
         # TODO

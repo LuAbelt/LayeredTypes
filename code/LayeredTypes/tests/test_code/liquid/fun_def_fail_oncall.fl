@@ -1,0 +1,10 @@
+-- Check that function calls fails for user-defined functions if the liquid type does not match the type of the function argument.
+liquidFun :: liquid :: { v:Int | v > 0 } -> { v:Int | v > 0 }
+liquidFun x {
+    y :: liquid :: {v:Int | v > 0}
+    let y := x in {
+        y
+    }
+}
+
+liquidFun(0)
