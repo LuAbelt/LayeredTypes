@@ -148,8 +148,21 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual(type_expected, e.type_expected)
 
     def test_fun_def_fail_oncall(self):
-        # TODO
-        self.assertTrue(False)
+        compiler = get_compiler(layer_path="layer_implementations")
+        src_file = full_path("/test_code/liquid/fun_def_fail_oncall.fl")
+
+        with self.assertRaises(LayerException) as context:
+            compiler.typecheck(src_file)
+
+        self.assertEqual("liquid", context.exception.layer_name)
+        e = context.exception.original_exception
+        self.assertEqual("LiquidSubtypeException", e.__class__.__name__)
+        self.assertEqual(10, e.lineno)
+        self.assertEqual(1, e.offset)
+        type_expected = parse_type("{v:Int | v > 0}")
+        type_actual = parse_type("{v:Int | v == 0}")
+        self.assertEqual(type_actual, e.type_actual)
+        self.assertEqual(type_expected, e.type_expected)
 
     def test_fun_def_multiple_args(self):
         typecheck_correct_file(self, "/test_code/liquid/fun_def_multiple_args.fl")
