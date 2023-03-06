@@ -7,7 +7,7 @@ from aeon.core.substitutions import substitution_in_type
 from aeon.core.terms import Var
 from aeon.core.types import t_int, t_bool, t_string, RefinedType
 from aeon.frontend.parser import mk_parser
-from aeon.typing.context import EmptyContext, VariableBinder
+from aeon.typing.context import EmptyContext, VariableBinder, TypingContext
 from aeon.typing.entailment import entailment
 from aeon.verification.sub import sub
 from compiler.Exceptions import TypecheckException, WrongArgumentCountException, FeatureNotSupportedError
@@ -39,6 +39,23 @@ class LiquidTypeUndefinedError(TypecheckException):
         super().__init__(f"Type of identifier {identifier} is undefined", line, column)
         pass
 
+def make_name_unique(name :str, context :TypingContext) -> str:
+    """Makes a name unique by appending a number to it.
+
+    Args:
+        name (str): The name to make unique
+        context (TypingContext): The context in which the name should be unique
+
+    Returns:
+        str: The unique name
+    """
+    if context.type_of(name) is not None:
+        p = 1
+        while context.type_of(f"{name}_{p}") is not None:
+            p += 1
+        name = f"{name}_{p}"
+
+    return name
 class LiquidLayer(lark.visitors.Interpreter):
     def __init__(self):
         self.__types = {}
@@ -176,11 +193,7 @@ class LiquidLayer(lark.visitors.Interpreter):
             assert type(arg_type) == RefinedType
             original_name = expected_arg_types[i].name
             free_var_name = f"{fun_identifier}_{original_name}"
-            if context.type_of(free_var_name) is not None:
-                p = 1
-                while context.type_of(f"{free_var_name}_{p}") is not None:
-                    p += 1
-                free_var_name = f"{free_var_name}_{p}"
+            free_var_name = make_name_unique(free_var_name, context)
 
             # We need to rename the variable in all the refinements for the remaining arguments
             for j in range(i+1, len(expected_arg_types)):
