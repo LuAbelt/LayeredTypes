@@ -1,0 +1,10 @@
+funCall :: liquid :: {x:Int | x > 0} -> {y:Int | y==x}
+fun f :: liquid :: {x:Int | x > 0} -> {y:Int | y==(x+1)}
+
+threeArgs :: liquid :: {x:Int | x > 2} -> {y:Int | y > x} -> {z:Int | z > y} -> {v:Int | v > z}
+
+x :: liquid :: {x:Int | x > 10}
+
+let x := threeArgs(fun(5),funCall(5),fun(10)) in {
+    x
+}
