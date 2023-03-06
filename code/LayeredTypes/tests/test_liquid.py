@@ -128,8 +128,11 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual(1, e.offset)
 
     def test_fun_def(self):
-        #TODO
-        self.assertTrue(False)
+        typecheck_correct_file(self, "/test_code/liquid/fun_def.fl")
+
+
+    def test_fun_def_multiple_args(self):
+        typecheck_correct_file(self, "/test_code/liquid/fun_def_multiple_args.fl")
 
     def test_nested_fun_call_multiple_args(self):
         typecheck_correct_file(self, "/test_code/liquid/nested_fun_call_multiple_args.fl")

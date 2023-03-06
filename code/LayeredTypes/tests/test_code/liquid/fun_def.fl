@@ -1,0 +1,9 @@
+liquidFun :: liquid :: { v:Int | v > 0 } -> { v:Int | v > 0 }
+liquidFun x {
+    y :: liquid :: {v:Int | v > 0}
+    let y := x in {
+        y
+    }
+}
+
+liquidFun(1)
