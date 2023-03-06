@@ -1,7 +1,7 @@
 import unittest
 from graphlib import CycleError
 
-from tests.utils import parse_file, get_compiler, full_path, call_order
+from utils import get_compiler, full_path, call_order
 
 class TestLayerDefinitions(unittest.TestCase):
 

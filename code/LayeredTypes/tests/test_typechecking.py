@@ -1,7 +1,7 @@
 import unittest
 
 from compiler.Exceptions import LayerException
-from tests.utils import get_compiler, full_path, typecheck_correct_file
+from utils import get_compiler, full_path, typecheck_correct_file
 
 
 class Typechecking(unittest.TestCase):

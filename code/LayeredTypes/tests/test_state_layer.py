@@ -1,8 +1,8 @@
 import unittest
 
 from compiler.Exceptions import LayerException
-from layer_implementations.state import StateError as StateError, ArgumentState
-from tests.utils import typecheck_correct_file, get_compiler, full_path
+from layer_implementations.state import ArgumentState
+from utils import typecheck_correct_file, get_compiler, full_path
 
 
 class StateLayer(unittest.TestCase):

@@ -1,4 +1,4 @@
-from tests.utils import call_order
+from utils import call_order
 
 def depends_on():
     return set()

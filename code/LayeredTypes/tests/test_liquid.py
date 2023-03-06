@@ -1,8 +1,8 @@
 import unittest
 
-from aeon.frontend.parser import mk_parser, parse_type
+from aeon.frontend.parser import parse_type
 from compiler.Exceptions import LayerException
-from tests.utils import parse_file, typecheck_correct_file, get_compiler, full_path
+from utils import typecheck_correct_file, get_compiler, full_path
 
 
 class TestLiquidLayer(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestLiquidLayer(unittest.TestCase):
         typecheck_correct_file(self, "/test_code/liquid/simple_assignment_infer.fl")
 
     def test_simple_assignment_fail(self):
-        compiler = get_compiler(layer_path="../layer_implementations")
+        compiler = get_compiler(layer_path="layer_implementations")
         src_file = full_path("/test_code/liquid/simple_assignment_fail.fl")
 
         with self.assertRaises(LayerException) as context:
@@ -31,7 +31,7 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual(type_expected, e.type_expected)
 
     def test_simple_assignment_infer_fail(self):
-        compiler = get_compiler(layer_path="../layer_implementations")
+        compiler = get_compiler(layer_path="layer_implementations")
         src_file = full_path("/test_code/liquid/simple_assignment_infer_fail.fl")
 
         with self.assertRaises(LayerException) as context:
@@ -73,7 +73,7 @@ class TestLiquidLayer(unittest.TestCase):
         typecheck_correct_file(self, "/test_code/liquid/let_inner_layer.fl")
 
     def test_let_inner_layer_fail(self):
-        compiler = get_compiler(layer_path="../layer_implementations")
+        compiler = get_compiler(layer_path="layer_implementations")
         src_file = full_path("/test_code/liquid/let_inner_layer_fail.fl")
 
         with self.assertRaises(LayerException) as context:
@@ -87,7 +87,7 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual("y", e.identifier)
 
     def test_ident_type_undefined(self):
-        compiler = get_compiler(layer_path="../layer_implementations")
+        compiler = get_compiler(layer_path="layer_implementations")
         src_file = full_path("/test_code/liquid/ident_type_undefined.fl")
 
         with self.assertRaises(LayerException) as context:
@@ -101,7 +101,7 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual("x", e.identifier)
 
     def test_fun_type_undefined(self):
-        compiler = get_compiler(layer_path="../layer_implementations")
+        compiler = get_compiler(layer_path="layer_implementations")
         src_file = full_path("/test_code/liquid/fun_type_undefined.fl")
 
         with self.assertRaises(LayerException) as context:
@@ -115,7 +115,7 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual("oneArg", e.identifier)
 
     def test_assign_fail(self):
-        compiler = get_compiler(layer_path="../layer_implementations")
+        compiler = get_compiler(layer_path="layer_implementations")
         src_file = full_path("/test_code/liquid/assign_fail.fl")
 
         with self.assertRaises(LayerException) as context:

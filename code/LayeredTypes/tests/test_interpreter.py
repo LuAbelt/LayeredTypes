@@ -1,10 +1,8 @@
 import os
 import unittest
 
-import lark
-
 from compiler.Interpreters import SimpleInterpreter
-from tests.utils import parse_file, get_compiler, full_path
+from utils import parse_file, get_compiler, full_path
 
 
 # We create a new Interpreter as we want the return value for each statement

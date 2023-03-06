@@ -1,8 +1,6 @@
-import os.path
 import unittest
 
-from compiler.Compiler import LayeredCompiler
-from tests.utils import parse_file, get_compiler, full_path
+from utils import parse_file, get_compiler, full_path
 
 
 class TestParser(unittest.TestCase):

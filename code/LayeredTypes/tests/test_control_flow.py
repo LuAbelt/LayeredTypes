@@ -1,7 +1,7 @@
 import unittest
 
 from compiler.interpreters.CheckCF import CheckCF
-from tests.utils import parse_file
+from utils import parse_file
 
 
 class TestControlFlow(unittest.TestCase):
