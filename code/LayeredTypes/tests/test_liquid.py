@@ -164,7 +164,7 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual("LiquidSubtypeException", e.__class__.__name__)
         self.assertEqual(10, e.lineno)
         self.assertEqual(1, e.offset)
-        type_expected = RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)]))
+        type_expected = parse_type("{v:Int | v > 0}")
         type_actual = parse_type("{v:Int | v == 0}")
         self.assertEqual(type_actual, e.type_actual)
         self.assertEqual(type_expected, e.type_expected)
@@ -193,8 +193,6 @@ class TestLiquidLayer(unittest.TestCase):
         compiler = get_compiler(layer_path="layer_implementations")
         src_file = full_path("/test_code/liquid/fun_def_multiple_args_fail_oncall.fl")
 
-        compiler.typecheck(src_file)
-
         with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
 
@@ -203,7 +201,7 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual("LiquidSubtypeException", e.__class__.__name__)
         self.assertEqual(13, e.lineno)
         self.assertEqual(1, e.offset)
-        type_expected = parse_type("{v:Int | x > v}")
+        type_expected = parse_type("{x:Int | x > liquidFun_v}")
         type_actual = parse_type("{v:Int | v == 1}")
         self.assertEqual(type_actual, e.type_actual)
         self.assertEqual(type_expected, e.type_expected)

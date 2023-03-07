@@ -1,5 +1,5 @@
 from collections import Counter
-from copy import copy
+from copy import copy, deepcopy
 import typing as tp
 
 import lark
@@ -257,7 +257,9 @@ class LiquidLayer(lark.visitors.Interpreter):
 
         # First check if we have a type definition for the function
         fun_identifier = tree.children[0].value
-        fun_type = tree.get_layer_annotation("liquid", fun_identifier, "function_type")
+        # We want to explicitly copy the function type, as we will modify it
+        # If we wouldn't copy it this would have implications when calling the function
+        fun_type = deepcopy(tree.get_layer_annotation("liquid", fun_identifier, "function_type"))
 
         if fun_type is None:
             raise LiquidTypeUndefinedError(fun_identifier, tree.meta.line, tree.meta.column)
