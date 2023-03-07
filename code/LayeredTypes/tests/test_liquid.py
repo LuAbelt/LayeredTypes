@@ -1,5 +1,7 @@
 import unittest
 
+import pytest
+
 from aeon.core.liquid import LiquidApp, LiquidVar, LiquidLiteralInt
 from aeon.core.types import RefinedType, t_int
 from aeon.frontend.parser import parse_type
@@ -235,7 +237,6 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual(type_expected, e.argument_type)
 
 class TestSubstitutions(unittest.TestCase):
-
     def test_single_refinement_substituted(self):
         type_before = parse_type("{v:Int | v > 0}")
         type_after = RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] ))
@@ -243,17 +244,6 @@ class TestSubstitutions(unittest.TestCase):
         substitute_refinement_names([type_before, None])
         self.assertEqual(type_after, type_before)
 
-    def test_two_refinements_references(self):
-        self.assertTrue(False)
-
-    def test_multiple_refinements_references(self):
-        self.assertTrue(False)
-
-    def test_multiple_refinements_no_references(self):
-        self.assertTrue(False)
-
-    def test_multiple_refinements_mixed(self):
-        self.assertTrue(False)
 
     def test_substitute_arg_names_single_refinement(self):
         self.assertTrue(False)
@@ -266,3 +256,65 @@ class TestSubstitutions(unittest.TestCase):
 
     def test_substitute_arg_names_multiple_refinements_references(self):
         self.assertTrue(False)
+
+test_vals = [
+    ([parse_type("{v:Int | v > 0}")],
+     [RefinedType("$arg0", t_int,
+                  LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] ))
+     ]
+    ),
+    (
+        [parse_type("{x:Int | x > 0}"), parse_type("{y:Int | y > x}")],
+        [
+            RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] )),
+            RefinedType("$arg1", t_int, LiquidApp(">", [LiquidVar("$arg1"), LiquidVar("$arg0")]))
+        ]
+    ),
+    (
+        [parse_type("{x:Int | x > 0}"), parse_type("{y:Int | y > x}"), parse_type("{z:Int | z > y}")],
+        [
+            RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] )),
+            RefinedType("$arg1", t_int, LiquidApp(">", [LiquidVar("$arg1"), LiquidVar("$arg0")])),
+            RefinedType("$arg2", t_int, LiquidApp(">", [LiquidVar("$arg2"), LiquidVar("$arg1")]))
+        ]
+    ),
+    (
+        [parse_type("{x:Int | x > 0}"), parse_type("{y:Int | y > x}"), parse_type("{z:Int | z != x}")],
+        [
+            RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] )),
+            RefinedType("$arg1", t_int, LiquidApp(">", [LiquidVar("$arg1"), LiquidVar("$arg0")])),
+            RefinedType("$arg2", t_int, LiquidApp("!=", [LiquidVar("$arg2"), LiquidVar("$arg0")]))
+        ]
+    ),
+    (
+        [
+            parse_type("{x:Int | x > 0}"),
+            parse_type("{x:Int | x > 1}"),
+            parse_type("{x:Int | x > 2}")
+        ],
+        [
+            RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] )),
+            RefinedType("$arg1", t_int, LiquidApp(">", [LiquidVar("$arg1"), LiquidLiteralInt(1)])),
+            RefinedType("$arg2", t_int, LiquidApp(">", [LiquidVar("$arg2"), LiquidLiteralInt(2)]))
+        ]
+    ),
+    (
+        [
+            parse_type("{x:Int | x > 0}"),
+            parse_type("{y:Int | y > 1}"),
+            parse_type("{x:Int | x > 2}"),
+            parse_type("{z:Int | z > y}")
+        ],
+        [
+            RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] )),
+            RefinedType("$arg1", t_int, LiquidApp(">", [LiquidVar("$arg1"), LiquidLiteralInt(1)])),
+            RefinedType("$arg2", t_int, LiquidApp(">", [LiquidVar("$arg2"), LiquidLiteralInt(2)])),
+            RefinedType("$arg3", t_int, LiquidApp(">", [LiquidVar("$arg3"), LiquidVar("$arg1")]))
+        ]
+    )
+]
+
+@pytest.mark.parametrize("types_before,types_after", test_vals)
+def test_refinement_substitutions(types_before, types_after):
+    substitute_refinement_names([*types_before, None])
+    assert types_after == types_before
