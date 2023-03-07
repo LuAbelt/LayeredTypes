@@ -1,5 +1,6 @@
 from collections import Counter
 from copy import copy
+import typing as tp
 
 import lark
 
@@ -72,6 +73,26 @@ def make_name_unique(name :str, context :TypingContext) -> str:
         name = f"{name}_{p}"
 
     return name
+
+
+def substitute_refinement_names(fun_types: tp.List[RefinedType]):
+    ref_var_names = [var.name for var in fun_types[:-1]]
+    ref_var_names_cnt = Counter(ref_var_names)
+    # We rename the variables in the refinements of the arguments
+    for idx, name in enumerate(ref_var_names):
+        fun_types[idx] = substitution_in_type(fun_types[idx], Var(f"$arg{idx}"), name)
+        if ref_var_names_cnt[name] == 1:
+            for i in range(idx + 1, len(ref_var_names)):
+                fun_types[i] = substitution_in_type(fun_types[i], Var(f"$arg{idx}"), name)
+
+    return fun_types
+
+def substitute_argument_names(arg_names: tp.List[str], arg_types: tp.List[RefinedType]):
+    for i in range(len(arg_names)):
+        ref_name = arg_types[i].name
+        for j in range(i + 1, len(arg_names)):
+            arg_types[j] = substitution_in_type(arg_types[j], arg_names[i], ref_name)
+
 class LiquidLayer(lark.visitors.Interpreter):
     def __init__(self):
         self.__types = {}
@@ -140,8 +161,6 @@ class LiquidLayer(lark.visitors.Interpreter):
             raise TypecheckException("Could not parse refinement type: " + str(e), tree.meta.line, tree.meta.column)
 
         if is_fn:
-            # We check that the refinements are valid
-            # Create a map from name to count of x.name in refinement types:
 
             refinement_var_counts = Counter([x.name for x in refinement_types])
             for i, ref in enumerate(refinement_types):
@@ -224,6 +243,8 @@ class LiquidLayer(lark.visitors.Interpreter):
             free_var_name = make_name_unique(free_var_name, context)
 
             # We need to rename the variable in all the refinements for the remaining arguments
+            # TODO: Differentiate cases where different arguments use the same variable name
+            # This is possible as long as the variable is not referenced in another refinement
             for j in range(i+1, len(expected_arg_types)):
                 expected_arg_types[j] = substitution_in_type(expected_arg_types[j], Var(free_var_name), original_name)
 
@@ -260,7 +281,8 @@ class LiquidLayer(lark.visitors.Interpreter):
         self.__ctx = EmptyContext()
         self.__types = {}
 
-        # Add the types of the arguments to the context and types dictionary
+        substitute_refinement_names(fun_type)
+
         for i in range(len(arg_names)):
             self.__ctx = VariableBinder(self.__ctx, arg_names[i], fun_type[i])
             self.__types[arg_names[i]] = fun_type[i]
@@ -272,7 +294,6 @@ class LiquidLayer(lark.visitors.Interpreter):
         self.__ctx = old_ctx
         self.__fun_types = old_fun_types
         self.__types = old_types
-
 
     def let_stmt(self, tree):
         ident = tree.children[0].children[0].value
@@ -299,7 +320,6 @@ class LiquidLayer(lark.visitors.Interpreter):
                                          tree.meta.line,
                                          tree.meta.column)
 
-        # TODO: Add expected or actual type to context?
         self.__ctx = context.with_var(ident, type_actual)
 
         # Visit the body of the let statement

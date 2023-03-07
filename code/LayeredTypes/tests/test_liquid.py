@@ -1,7 +1,10 @@
 import unittest
 
+from aeon.core.liquid import LiquidApp, LiquidVar, LiquidLiteralInt
+from aeon.core.types import RefinedType, t_int
 from aeon.frontend.parser import parse_type
 from compiler.Exceptions import LayerException
+from compiler.interpreters.LiquidTypeChecker import substitute_argument_names, substitute_refinement_names
 from utils import typecheck_correct_file, get_compiler, full_path
 
 
@@ -185,8 +188,10 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual(type_expected, e.type_expected)
 
     def test_fun_def_multiple_args_fail_oncall(self):
-        compiler = get_compiler(layer_path="../layer_implementations")
+        compiler = get_compiler(layer_path="layer_implementations")
         src_file = full_path("/test_code/liquid/fun_def_multiple_args_fail_oncall.fl")
+
+        compiler.typecheck(src_file)
 
         with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
@@ -229,4 +234,35 @@ class TestLiquidLayer(unittest.TestCase):
         type_expected = parse_type("{x:Int | x > v}")
         self.assertEqual(type_expected, e.argument_type)
 
-        
+class TestSubstitutions(unittest.TestCase):
+
+    def test_single_refinement_substituted(self):
+        type_before = parse_type("{v:Int | v > 0}")
+        type_after = RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] ))
+
+        types_substituted = substitute_refinement_names([type_before])
+        self.assertEqual([type_after], types_substituted)
+
+    def test_two_refinements_references(self):
+        self.assertTrue(False)
+
+    def test_multiple_refinements_references(self):
+        self.assertTrue(False)
+
+    def test_multiple_refinements_no_references(self):
+        self.assertTrue(False)
+
+    def test_multiple_refinements_mixed(self):
+        self.assertTrue(False)
+
+    def test_substitute_arg_names_single_refinement(self):
+        self.assertTrue(False)
+
+    def test_substitute_arg_names_multiple_refinements_no_ref(self):
+        self.assertTrue(False)
+
+    def test_substitute_arg_names_multiple_refinements_mixed(self):
+        self.assertTrue(False)
+
+    def test_substitute_arg_names_multiple_refinements_references(self):
+        self.assertTrue(False)
