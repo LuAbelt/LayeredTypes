@@ -90,7 +90,7 @@ def substitute_argument_names(arg_names: tp.List[str], arg_types: tp.List[Refine
     for i in range(len(arg_names)):
         ref_name = arg_types[i].name
         for j in range(i + 1, len(arg_names)):
-            arg_types[j] = substitution_in_type(arg_types[j], arg_names[i], ref_name)
+            arg_types[j].refinement = substitution_in_liquid(arg_types[j].refinement, LiquidVar(arg_names[i]), ref_name)
 
 class LiquidLayer(lark.visitors.Interpreter):
     def __init__(self):
@@ -281,6 +281,7 @@ class LiquidLayer(lark.visitors.Interpreter):
         self.__types = {}
 
         substitute_refinement_names(fun_type)
+        substitute_argument_names(arg_names, fun_type)
 
         for i in range(len(arg_names)):
             self.__ctx = VariableBinder(self.__ctx, arg_names[i], fun_type[i])

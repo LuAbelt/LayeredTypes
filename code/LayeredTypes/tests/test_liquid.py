@@ -236,28 +236,7 @@ class TestLiquidLayer(unittest.TestCase):
         type_expected = parse_type("{x:Int | x > v}")
         self.assertEqual(type_expected, e.argument_type)
 
-class TestSubstitutions(unittest.TestCase):
-    def test_single_refinement_substituted(self):
-        type_before = parse_type("{v:Int | v > 0}")
-        type_after = RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] ))
-
-        substitute_refinement_names([type_before, None])
-        self.assertEqual(type_after, type_before)
-
-
-    def test_substitute_arg_names_single_refinement(self):
-        self.assertTrue(False)
-
-    def test_substitute_arg_names_multiple_refinements_no_ref(self):
-        self.assertTrue(False)
-
-    def test_substitute_arg_names_multiple_refinements_mixed(self):
-        self.assertTrue(False)
-
-    def test_substitute_arg_names_multiple_refinements_references(self):
-        self.assertTrue(False)
-
-test_vals = [
+refinement_replacement_test_vals = [
     ([parse_type("{v:Int | v > 0}")],
      [RefinedType("$arg0", t_int,
                   LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] ))
@@ -314,7 +293,80 @@ test_vals = [
     )
 ]
 
-@pytest.mark.parametrize("types_before,types_after", test_vals)
+argument_names_substitution_test_vals = [
+    (
+        ["x"],
+        [
+            parse_type("{v:Int | v > 0}"),
+        ],
+        [
+            parse_type("{v:Int | v > 0}"),
+        ]
+    ),
+    (
+        ["x", "y"],
+        [
+            parse_type("{v1:Int | v1 > 0}"),
+            parse_type("{v2:Int | v2 > v1}"),
+        ],
+        [
+            parse_type("{v1:Int | v1 > 0}"),
+            parse_type("{v2:Int | v2 > x}")
+        ]
+    ),
+    (
+        ["x", "y", "z"],
+        [
+            parse_type("{v1:Int | v1 > 0}"),
+            parse_type("{v2:Int | v2 > v1}"),
+            parse_type("{v3:Int | v3 > v2}"),
+        ],
+        [
+            parse_type("{v1:Int | v1 > 0}"),
+            parse_type("{v2:Int | v2 > x}"),
+            parse_type("{v3:Int | v3 > y}")
+        ]
+    ),
+    (
+        ["x", "y", "z"],
+        [
+            parse_type("{v1:Int | v1 > 0}"),
+            parse_type("{v2:Int | v2 > 1}"),
+            parse_type("{v3:Int | v3 > 2}"),
+        ],
+        [
+            parse_type("{v1:Int | v1 > 0}"),
+            parse_type("{v2:Int | v2 > 1}"),
+            parse_type("{v3:Int | v3 > 2}"),
+        ]
+    ),
+    (
+        ["x", "y", "z", "w"],
+        [
+            parse_type("{v1:Int | v1 > 0}"),
+            parse_type("{v2:Int | v2 > 1}"),
+            parse_type("{v3:Int | v3 > v2}"),
+            parse_type("{v4:Int | v4 > v3}"),
+        ],
+        [
+            parse_type("{v1:Int | v1 > 0}"),
+            parse_type("{v2:Int | v2 > 1}"),
+            parse_type("{v3:Int | v3 > y}"),
+            parse_type("{v4:Int | v4 > z}")
+        ]
+    ),
+    ]
+@pytest.mark.parametrize("types_before,types_after", refinement_replacement_test_vals)
 def test_refinement_substitutions(types_before, types_after):
     substitute_refinement_names([*types_before, None])
+    assert types_after == types_before
+
+@pytest.mark.parametrize("arg_names,types_before,types_after", argument_names_substitution_test_vals)
+def test_argument_names_substitution(arg_names, types_before, types_after):
+    substitute_argument_names(arg_names, types_before)
+    assert types_after == types_before
+
+def test_fun_def_end_to_end(arg_names, types_before, types_after):
+    substitute_refinement_names([*types_before, None])
+    substitute_argument_names(arg_names, types_before)
     assert types_after == types_before
