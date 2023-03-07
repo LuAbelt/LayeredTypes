@@ -240,8 +240,8 @@ class TestSubstitutions(unittest.TestCase):
         type_before = parse_type("{v:Int | v > 0}")
         type_after = RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] ))
 
-        types_substituted = substitute_refinement_names([type_before])
-        self.assertEqual([type_after], types_substituted)
+        substitute_refinement_names([type_before, None])
+        self.assertEqual(type_after, type_before)
 
     def test_two_refinements_references(self):
         self.assertTrue(False)

@@ -5,7 +5,7 @@ import typing as tp
 import lark
 
 from aeon.core.liquid import LiquidLiteralInt, LiquidLiteralBool, LiquidVar, liquid_free_vars
-from aeon.core.substitutions import substitution_in_type
+from aeon.core.substitutions import substitution_in_type, substitution_in_liquid
 from aeon.core.terms import Var
 from aeon.core.types import t_int, t_bool, t_string, RefinedType
 from aeon.frontend.parser import mk_parser
@@ -80,12 +80,11 @@ def substitute_refinement_names(fun_types: tp.List[RefinedType]):
     ref_var_names_cnt = Counter(ref_var_names)
     # We rename the variables in the refinements of the arguments
     for idx, name in enumerate(ref_var_names):
-        fun_types[idx] = substitution_in_type(fun_types[idx], Var(f"$arg{idx}"), name)
+        fun_types[idx].name = f"$arg{idx}"
+        fun_types[idx].refinement = substitution_in_liquid(fun_types[idx].refinement, LiquidVar(f"$arg{idx}"), name)
         if ref_var_names_cnt[name] == 1:
             for i in range(idx + 1, len(ref_var_names)):
-                fun_types[i] = substitution_in_type(fun_types[i], Var(f"$arg{idx}"), name)
-
-    return fun_types
+                fun_types[i].refinement = substitution_in_liquid(fun_types[i].refinement, LiquidVar(f"$arg{idx}"), name)
 
 def substitute_argument_names(arg_names: tp.List[str], arg_types: tp.List[RefinedType]):
     for i in range(len(arg_names)):
