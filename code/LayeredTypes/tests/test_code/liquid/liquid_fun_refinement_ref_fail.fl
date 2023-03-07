@@ -2,4 +2,4 @@
 -- An invalid liquid function refinement is one that reuses a variable name that
 -- is later referenced by another refinement.
 
-fun :: liquid :: {v: Int | v == 0} -> {v: Int | v == 10} => {x: Int | x>v}
+fun :: liquid :: {v: Int | v == 0} -> {v: Int | v == 10} -> {x: Int | x>v}

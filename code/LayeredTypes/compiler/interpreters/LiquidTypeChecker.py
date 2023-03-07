@@ -1,8 +1,9 @@
+from collections import Counter
 from copy import copy
 
 import lark
 
-from aeon.core.liquid import LiquidLiteralInt, LiquidLiteralBool, LiquidVar
+from aeon.core.liquid import LiquidLiteralInt, LiquidLiteralBool, LiquidVar, liquid_free_vars
 from aeon.core.substitutions import substitution_in_type
 from aeon.core.terms import Var
 from aeon.core.types import t_int, t_bool, t_string, RefinedType
@@ -37,6 +38,21 @@ class LiquidTypeUndefinedError(TypecheckException):
     def __init__(self, identifier, line, column):
         self.identifier = identifier
         super().__init__(f"Type of identifier {identifier} is undefined", line, column)
+        pass
+
+class LiquidFunctionDefinitionError(TypecheckException):
+    """Exception that will be raised when during liquid typechecking a function definition is invalid.
+
+    Attributes:
+        identifier -- the identifier that is undefined
+    """
+    def __init__(self, fun_name, argument_type, argument_idx, duplicate_var, line, column):
+        self.argument_type = argument_type
+        self.argument_idx = argument_idx
+        self.duplicate_var = duplicate_var
+        self.fun_name = fun_name
+
+        super().__init__(f"Function definition for {fun_name}:\rInvalid refinement at index {argument_idx}: {argument_idx}. (References non-unique variable {duplicate_var})", line, column)
         pass
 
 def make_name_unique(name :str, context :TypingContext) -> str:
@@ -124,6 +140,18 @@ class LiquidLayer(lark.visitors.Interpreter):
             raise TypecheckException("Could not parse refinement type: " + str(e), tree.meta.line, tree.meta.column)
 
         if is_fn:
+            # We check that the refinements are valid
+            # Create a map from name to count of x.name in refinement types:
+
+            refinement_var_counts = Counter([x.name for x in refinement_types])
+            for i, ref in enumerate(refinement_types):
+                for var in liquid_free_vars(ref.refinement):
+                    if var == ref.name:
+                        # We ignore the variable that is bound by the refinement
+                        continue
+                    if refinement_var_counts[var] > 1:
+                        raise LiquidFunctionDefinitionError(identifier, ref, i, var, tree.meta.line, tree.meta.column)
+
             self.__fun_types[identifier] = refinement_types
         else:
             self.__types[identifier] = refinement_types[0]
@@ -281,8 +309,6 @@ class LiquidLayer(lark.visitors.Interpreter):
         self.__ctx = old_ctx
         self.__fun_types = old_fun_types
         self.__types = old_types
-
-
 
     def custom_expr(self, tree):
         return t_string

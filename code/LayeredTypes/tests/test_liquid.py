@@ -211,13 +211,22 @@ class TestLiquidLayer(unittest.TestCase):
     def test_liquid_fun_refinement_no_overlap(self):
         typecheck_correct_file(self, "/test_code/liquid/liquid_fun_refinement_no_overlap.fl")
 
-    def test_liquid_fun_ref_fail(self):
+    def test_liquid_fun_refinement_ref_fail(self):
         compiler = get_compiler(layer_path="layer_implementations")
-        src_file = full_path("/test_code/liquid/liquid_fun_ref_fail.fl")
+        src_file = full_path("/test_code/liquid/liquid_fun_refinement_ref_fail.fl")
 
         with self.assertRaises(LayerException) as context:
             compiler.typecheck(src_file)
 
         self.assertEqual("liquid", context.exception.layer_name)
         e = context.exception.original_exception
-        self.assertTrue(False)
+        self.assertEqual("LiquidFunctionDefinitionError", e.__class__.__name__)
+        self.assertEqual(5, e.lineno)
+        self.assertEqual(1, e.offset)
+        self.assertEqual("fun", e.fun_name)
+        self.assertEqual("v", e.duplicate_var)
+        self.assertEqual(2, e.argument_idx)
+        type_expected = parse_type("{x:Int | x > v}")
+        self.assertEqual(type_expected, e.argument_type)
+
+        
