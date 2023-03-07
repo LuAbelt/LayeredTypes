@@ -356,6 +356,51 @@ argument_names_substitution_test_vals = [
         ]
     ),
     ]
+
+end_to_end_test_vals = [
+    (
+        ["x"],
+        [ parse_type("{x:Int | x > 0}") ],
+        [ RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] )) ]
+    ),
+    (
+        ["x", "y"],
+        [
+            parse_type("{y:Int | y > 0}"),
+            parse_type("{x:Int | x > y}")
+        ],
+        [
+            RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] )),
+            RefinedType("$arg1", t_int, LiquidApp(">", [LiquidVar("$arg1"), LiquidVar("x")]))
+        ]
+    ),
+    (
+        ["x", "y", "z"],
+        [
+            parse_type("{z:Int | z > 0}"),
+            parse_type("{x:Int | x > z}"),
+            parse_type("{y:Int | y > x}")
+        ],
+        [
+            RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] )),
+            RefinedType("$arg1", t_int, LiquidApp(">", [LiquidVar("$arg1"), LiquidVar("x")])),
+            RefinedType("$arg2", t_int, LiquidApp(">", [LiquidVar("$arg2"), LiquidVar("y")])),
+        ]
+    ),
+    (
+        ["x", "y", "z"],
+        [
+            parse_type("{x:Int | x > 0}"),
+            parse_type("{x:Int | x > 1}"),
+            parse_type("{x:Int | x > 2}"),
+        ],
+        [
+            RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)] )),
+            RefinedType("$arg1", t_int, LiquidApp(">", [LiquidVar("$arg1"), LiquidLiteralInt(1)])),
+            RefinedType("$arg2", t_int, LiquidApp(">", [LiquidVar("$arg2"), LiquidLiteralInt(2)])),
+        ]
+    ),
+]
 @pytest.mark.parametrize("types_before,types_after", refinement_replacement_test_vals)
 def test_refinement_substitutions(types_before, types_after):
     substitute_refinement_names([*types_before, None])
@@ -366,6 +411,7 @@ def test_argument_names_substitution(arg_names, types_before, types_after):
     substitute_argument_names(arg_names, types_before)
     assert types_after == types_before
 
+@pytest.mark.parametrize("arg_names,types_before,types_after", end_to_end_test_vals)
 def test_fun_def_end_to_end(arg_names, types_before, types_after):
     substitute_refinement_names([*types_before, None])
     substitute_argument_names(arg_names, types_before)
