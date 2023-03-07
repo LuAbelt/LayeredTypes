@@ -148,7 +148,7 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual(6, e.lineno)
         self.assertEqual(5, e.offset)
         type_expected = parse_type("{v:Int | v > 0}")
-        type_actual = parse_type("{v:Int | v >= 0}")
+        type_actual = RefinedType("$arg0", t_int, LiquidApp(">=", [LiquidVar("$arg0"), LiquidLiteralInt(0)]))
         self.assertEqual(type_actual, e.type_actual)
         self.assertEqual(type_expected, e.type_expected)
 
@@ -164,7 +164,7 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual("LiquidSubtypeException", e.__class__.__name__)
         self.assertEqual(10, e.lineno)
         self.assertEqual(1, e.offset)
-        type_expected = parse_type("{v:Int | v > 0}")
+        type_expected = RefinedType("$arg0", t_int, LiquidApp(">", [LiquidVar("$arg0"), LiquidLiteralInt(0)]))
         type_actual = parse_type("{v:Int | v == 0}")
         self.assertEqual(type_actual, e.type_actual)
         self.assertEqual(type_expected, e.type_expected)
@@ -185,7 +185,7 @@ class TestLiquidLayer(unittest.TestCase):
         self.assertEqual(8, e.lineno)
         self.assertEqual(5, e.offset)
         type_expected = parse_type("{v:Int | v > 0}")
-        type_actual = parse_type("{v:Int | v >= 0}")
+        type_actual = RefinedType("$arg1", t_int, LiquidApp(">=", [LiquidVar("$arg1"), LiquidLiteralInt(0)]))
         self.assertEqual(type_actual, e.type_actual)
         self.assertEqual(type_expected, e.type_expected)
 
