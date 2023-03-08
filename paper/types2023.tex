@@ -116,22 +116,23 @@ Author 2\inst{2}
 %class, errors).
 
 %------------------------------------------------------------------------------
-%\section{Context}
+\section{Context}
 \label{sec:context}
-Most programmers and computer scientists will be familiar with simple type systems that ensure that the code they write are type safe in the context of the language they are writing it in. However, much more sophisticated type systems exist that can be used to ensure specific properties of a program. For example Session Types \cite{session} can be used to show correctness of concurrent programs, linear type systems \cite{linear} ensure that objects are used exactly once and Refinement Types \cite{refinement} can narrow types by imposing predicates onto them. Another example is the use of liquid types to show bounds on resource usage \cite{liquidate-assets}.
+Most programmers and computer scientists will be familiar with simple type systems that ensure that the code they write are type safe in the context of the language they are writing it in. However, much more sophisticated type systems exist that can be used to ensure specific properties of a program. Examples for this are Session Types \cite{session}, used for concurrent programs, linear type systems \cite{linear} or Refinement Types \cite{refinement}.
 
-Depending on the specific type systems, they can be viewed as independently and orthogonal from one another, however sometimes type systems also depend on other type systems and thus extending them. One example of this are refinement types which build on top of traditional type systems and extend these types by making them more specific. Most importantly not all type systems are useful for any program; When developing some low-level code meant to be run in an operating systems' kernel, they might want to use the help of a specific type system that ensure that they do not exceed certain bounds in memory usage. However, when developing an application that is meant to be run in a highly distributed environment, using Session Types might be a more appropriate type system to ensure the correct implementation of the communication of the distirbuted components.
+Depending on the specific type systems, they can be viewed as independently and orthogonal from one another, however sometimes type systems can also extend existing ones such as refinement types which build on top of traditional type systems and make these more specific. Most importantly not all type systems are useful for any program; When developing some low-level code meant to be run in an operating systems' kernel, they might want to use the help of a specific type system that ensure that they do not exceed certain bounds in memory usage such as shown in \cite{liquidate-assets}. However, when developing an application that is meant to be run in a highly distributed environment, using Session Types might be a more appropriate type system to ensure the correct implementation of the communication of the distributed components.
 
-%\section{Challenges in Type Systems}
+\section{Challenges in Type Systems}
 \label{sec:challenges-in-type-systems}
 Most commonly used programming languages such as Java, C++ or Haskell embed a single type system that checks, either statically or dynamically, that functions and variables are used in a compatible way. To use more sophisticated type systems such as Liquid Types, one has to rely on specific tools or compiler extensions such as LiquidHaskell\cite{LiquidHaskell} or LiquidJava\cite{LiquidJava}. This leads to the issue that it is usually not trivially possible to combine different type systems in a single program. However in some cases one might require multiple different type systems to ensure different properties of a program.
 
-Consider the very simple code example in \autoref{lst:code_before} that reads the text contents of a file and prints it to the console line-by-line. Even in this short example there are multiple different concerns to be addressed:
-\begin{itemize}
-	\item From a type-safety perspective, one wants to make sure that e.g. \texttt{get(...)} is only called with a list and an integer index as arguments
-	\item Additionally, one wants to ensure that \texttt{get} is never accessed with an index that exceeds the lists length to avoid out-of-bounds access errors at runtime
-	\item When working with resources such as file descriptors one wants to ensure that these are in a proper (closed) state by the end of the program execution
-\end{itemize}
+Consider the simple code example in \autoref{lst:code_before} that reads the text contents of a file and prints it to the console line-by-line. In this short snippet, there are multiple concerns to be addressed. Firstly, one wants to ensure that all function calls are done with variables of the appropriate data types. Secondly, to avoid errors due to an out of bound access, \texttt{get} should only be called with an index that exceeds the list length. Lastly, when working with resources such as a file descriptor it might be useful to track it's state and ensure that it is in a proper (closed) state at the end of program execution.
+%\begin{itemize}
+%	\item From a type-safety perspective, one wants to make sure that e.g. \texttt{get(...)} is only called with a list and an integer index as arguments
+%	\item Additionally, one wants to ensure that \texttt{get} is never accessed with an index that exceeds the lists length to avoid out-of-bounds access errors at runtime
+%	\item When working with resources such as file descriptors one wants to ensure that these are in a proper (closed) state by the end of the program execution
+%\end{itemize}
+
 Optimally, these properties should be verified independently from each other wherever possible. For example tracking the state of a resource can be done independently of it's specific type, so in case that for whatever reason this check fails we still want to be able to independently verify whether or not the state behaves as we intend it.
 
 \begin{minipage}{0.4\linewidth}
@@ -186,16 +187,16 @@ fileDescriptor :: state :: {Closed}
 
 A very similar issue can also be observed when operating on Liquid Types: In certain cases we want to define predicates on orthogonal properties that could be verified independently from one another; However, current implementation of liquid types do not allow us to define distinct predicates to be verified independently. In such cases we have to merge all relevant properties into one joint predicate which can make it hard to identify the specific issue when the verification fails.
 
-%\section{Proposed Approach}
+\section{Proposed Approach}
 \label{sec:proposed-approach}
 
-To tackle these issues, we present \LayeredTypes. In our approach we view different type systems as indepent layers that can be verified in an incremental way. Layers can either verify properties in a complete stand-alone matter, or they can define dependencies to other layers which allow to build more complex type systems in an incremental manner.
+To tackle these issues, we present \LayeredTypes. In our approach we view different type systems as indepent layers that can be verified in an incremental way. Layers can either verify properties in a complete stand-alone matter, or they can define dependencies to other layers which allow to build more complex type systems.
 
-We want to note an important distinction to Gradual Typing\cite{gradual}: While the latter is concerned with only providing partial typing information and making it gradually more precise, our approach does not focus on the information provided to the verifier, but rather on \textit{how} this informati.
+We want to note an important distinction to Gradual Typing\cite{gradual}: While the latter is concerned with only providing partial typing information and making it gradually more precise, our approach does not focus on the information provided to the verifier, but rather on \textit{how} this information.
 
-In our work we present a python-based demonstration framework that implements this layered verification approach. In a similar manner to passes in compilers, users can provide their own implementations for verification layers that suit their workflow. In \autoref{lst:code_after} we see a set of annotations that can be added to the base code of \autoref{lst:code_before} to tackle the issues described. We define three separate layers \texttt{State}, \texttt{types} and \texttt{liquid}. Our framework will build a dependency graph of the layers which allows the type "path" to be verified independently from the state path.
+In our work we present a python-based demonstration framework that implements this layered verification approach. Users can provide their own implementations for verification layers and define dependencies between them. In \autoref{lst:code_after} we see a set of annotations that can be added to the base code of \autoref{lst:code_before} to tackle the issues described. We define three separate layers \texttt{state}, \texttt{types} and \texttt{liquid}. Internally, the framework will build a dependency graph thus allowing to verify properties independently from one another where appropriate.
 
-During our work we implemented two specific use-cases, one similar to the code snippet presented above and one using multiple liquid layers to verify different liquid properties independently.
+We believe that this layered, incremental approach can help build more powerful and independent type systems while at the same time making it simpler to understand the errors that might arise during verification.
 
 
 %------------------------------------------------------------------------------
