@@ -5,8 +5,11 @@ import pytest
 from aeon.core.liquid import LiquidApp, LiquidVar, LiquidLiteralInt
 from aeon.core.types import RefinedType, t_int
 from aeon.frontend.parser import parse_type
+from aeon.typing.context import EmptyContext
+from aeon.utils.ctx_helpers import build_context
 from compiler.Exceptions import LayerException
-from compiler.interpreters.LiquidTypeChecker import substitute_argument_names, substitute_refinement_names
+from compiler.interpreters.LiquidTypeChecker import substitute_argument_names, substitute_refinement_names, \
+    rename_variable
 from utils import typecheck_correct_file, get_compiler, full_path
 
 
@@ -399,6 +402,112 @@ end_to_end_test_vals = [
         ]
     ),
 ]
+
+fun_call_var_renaming_test_vals = [
+    (
+        (
+            EmptyContext(),
+            "arg",
+            "fun",
+            ["arg"],
+            []
+        ),
+        (
+            "fun_arg",
+            []
+        )
+    ),
+    (
+        (
+            EmptyContext(),
+            "arg",
+            "fun",
+            ["arg","v"],
+            [parse_type("{v:Int | v > 0}")]
+        ),
+        (
+            "fun_arg",
+            [parse_type("{v:Int | v > 0}")]
+        )
+    ),
+    (
+        (
+            EmptyContext(),
+            "arg",
+            "fun",
+            ["arg","v"],
+            [parse_type("{v:Int | v > arg}")]
+        ),
+        (
+            "fun_arg",
+            [parse_type("{v:Int | v > fun_arg}")]
+        )
+    ),
+    (
+        (
+            EmptyContext(),
+            "arg",
+            "fun",
+            ["arg","v","v"],
+            [
+                parse_type("{v:Int | v > 0}"),
+                parse_type("{v:Int | v > arg}")
+            ]
+        ),
+        (
+            "fun_arg",
+            [
+                parse_type("{v:Int | v > 0}"),
+                parse_type("{v:Int | v > fun_arg}")
+            ]
+        )
+    ),
+    (
+        (
+            EmptyContext(),
+            "v",
+            "fun",
+            ["v","v","v"],
+            [
+                parse_type("{v:Int | v > 0}"),
+                parse_type("{v:Int | v > 1}")
+            ]
+        ),
+        (
+            "fun_v",
+            [
+                parse_type("{v:Int | v > 0}"),
+                parse_type("{v:Int | v > 1}")
+            ]
+        )
+    ),
+    (
+        (
+            build_context({"fun_v": t_int}),
+            "v",
+            "fun",
+            [],
+            []
+        ),
+        (
+            "fun_v_1",
+            []
+        )
+    ),
+    (
+        (
+            build_context({"fun_v": t_int, "fun_v_1": t_int}),
+            "v",
+            "fun",
+            [],
+            []
+        ),
+        (
+            "fun_v_2",
+            []
+        )
+    )
+]
 @pytest.mark.parametrize("types_before,types_after", refinement_replacement_test_vals)
 def test_refinement_substitutions(types_before, types_after):
     substitute_refinement_names([*types_before, None])
@@ -414,3 +523,12 @@ def test_fun_def_end_to_end(arg_names, types_before, types_after):
     substitute_refinement_names([*types_before, None])
     substitute_argument_names(arg_names, types_before)
     assert types_after == types_before
+
+@pytest.mark.parametrize("test_input,expected_output", fun_call_var_renaming_test_vals)
+def test_fun_call_var_renaming(test_input, expected_output):
+    context, original_name, fun_name, arg_names, remaining_types = test_input
+    expected_name, expected_types = expected_output
+    new_name, new_types = rename_variable(context, original_name, fun_name, arg_names, remaining_types)
+    assert new_name == expected_name
+    assert new_types == expected_types
+    pass
