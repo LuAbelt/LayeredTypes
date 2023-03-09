@@ -92,6 +92,17 @@ def substitute_argument_names(arg_names: tp.List[str], arg_types: tp.List[Refine
         for j in range(i + 1, len(arg_names)):
             arg_types[j].refinement = substitution_in_liquid(arg_types[j].refinement, LiquidVar(arg_names[i]), ref_name)
 
+
+def rename_variable(context, expected_arg_types, fun_identifier, i):
+    original_name = expected_arg_types[i].name
+    free_var_name = f"{fun_identifier}_{original_name}"
+    free_var_name = make_name_unique(free_var_name, context)
+
+    for j in range(i + 1, len(expected_arg_types)):
+        expected_arg_types[j] = substitution_in_type(expected_arg_types[j], Var(free_var_name), original_name)
+    return free_var_name
+
+
 class LiquidLayer(lark.visitors.Interpreter):
     def __init__(self):
         self.__types = {}
@@ -237,15 +248,8 @@ class LiquidLayer(lark.visitors.Interpreter):
             # As other refinements may reference it
             # To ensure uniqueness, we rename the variable
             assert type(arg_type) == RefinedType
-            original_name = expected_arg_types[i].name
-            free_var_name = f"{fun_identifier}_{original_name}"
-            free_var_name = make_name_unique(free_var_name, context)
-
-            # We need to rename the variable in all the refinements for the remaining arguments
-            # TODO: Differentiate cases where different arguments use the same variable name
-            # This is possible as long as the variable is not referenced in another refinement
-            for j in range(i+1, len(expected_arg_types)):
-                expected_arg_types[j] = substitution_in_type(expected_arg_types[j], Var(free_var_name), original_name)
+            # TODO: do not always do this, only if the variable name is unique
+            free_var_name = rename_variable(context, expected_arg_types, fun_identifier, i)
 
             context = context.with_var(free_var_name, arg_type)
             self.__ctx = context
