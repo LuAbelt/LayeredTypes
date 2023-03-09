@@ -93,14 +93,14 @@ def substitute_argument_names(arg_names: tp.List[str], arg_types: tp.List[Refine
             arg_types[j].refinement = substitution_in_liquid(arg_types[j].refinement, LiquidVar(arg_names[i]), ref_name)
 
 
-def rename_variable(context, expected_arg_types, fun_identifier, i):
-    original_name = expected_arg_types[i].name
+def rename_variable(context, original_name, fun_identifier, all_arg_names, remaining_args):
     free_var_name = f"{fun_identifier}_{original_name}"
     free_var_name = make_name_unique(free_var_name, context)
 
-    for j in range(i + 1, len(expected_arg_types)):
-        expected_arg_types[j] = substitution_in_type(expected_arg_types[j], Var(free_var_name), original_name)
-    return free_var_name
+    if all_arg_names.count(original_name) == 1:
+        for i in range(len(remaining_args)):
+            remaining_args[i] = substitution_in_type(remaining_args[i], Var(free_var_name), original_name)
+    return free_var_name, remaining_args
 
 
 class LiquidLayer(lark.visitors.Interpreter):
@@ -231,6 +231,7 @@ class LiquidLayer(lark.visitors.Interpreter):
                                               tree.meta.column)
 
         context = tree.get_layer_annotation("liquid", "contexts", "context")
+        all_arg_names = [x.name for x in expected_arg_types]
         # Check that the types of the arguments are correct
         for i in range(actual_num_args):
             arg_type, context = self.visit(tree.children[i+1])
@@ -248,8 +249,10 @@ class LiquidLayer(lark.visitors.Interpreter):
             # As other refinements may reference it
             # To ensure uniqueness, we rename the variable
             assert type(arg_type) == RefinedType
-            # TODO: do not always do this, only if the variable name is unique
-            free_var_name = rename_variable(context, expected_arg_types, fun_identifier, i)
+
+            original_name = expected_arg_types[i].name
+            free_var_name, expected_arg_types[i+1:] = rename_variable(context, original_name, fun_identifier,
+                                                                      all_arg_names , expected_arg_types[i+1:])
 
             context = context.with_var(free_var_name, arg_type)
             self.__ctx = context
