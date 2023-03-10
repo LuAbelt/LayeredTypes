@@ -94,8 +94,8 @@ Author 2\inst{2}
 % will be rejected by EasyChair
 \titlerunning{Layered Types}
 
-\begin{document}
 
+\begin{document}
 \maketitle
 
 
@@ -192,7 +192,7 @@ A very similar issue can also be observed when operating on Liquid Types: In cer
 
 To tackle these issues, we present \LayeredTypes. In our approach we view different type systems as indepent layers that can be verified in an incremental way. Layers can either verify properties in a complete stand-alone matter, or they can define dependencies to other layers which allow to build more complex type systems.
 
-We want to note an important distinction to Gradual Typing\cite{gradual}: While the latter is concerned with only providing partial typing information and making it gradually more precise, our approach does not focus on the information provided to the verifier, but rather on \textit{how} this information.
+We want to note an important distinction to Gradual Typing\cite{gradual}\cite{gradual-objects}: While the latter is concerned with only providing partial typing information and making it gradually more precise, our approach does not focus on the information provided to the verifier, but rather on \textit{how} this information.
 
 In our work we present a python-based demonstration framework that implements this layered verification approach. Users can provide their own implementations for verification layers and define dependencies between them. In \autoref{lst:code_after} we see a set of annotations that can be added to the base code of \autoref{lst:code_before} to tackle the issues described. We define three separate layers \texttt{state}, \texttt{types} and \texttt{liquid}. Internally, the framework will build a dependency graph thus allowing to verify properties independently from one another where appropriate.
 
@@ -200,6 +200,8 @@ We believe that this layered, incremental approach can help build more powerful 
 
 
 %------------------------------------------------------------------------------
+\bibliographystyle{plain}
+\bibliography{literature}
 
 %------------------------------------------------------------------------------
 \end{document}
