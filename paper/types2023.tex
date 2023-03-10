@@ -87,7 +87,6 @@ Alcides Fonseca\inst{1}
 % EasyChair, this command is mandatory: a document without \authorrunning
 % will be rejected by EasyChair
 
-\authorrunning{Authorrunning}
 
 % \titlerunning{} has to be set to either the main title or its shorter
 % version for the running heads. When processed by
@@ -125,19 +124,11 @@ Some of these type systems can be dependent or independent from each other. Both
 
 Given this plethora of type systems, different applications require a different subset of type systems. Not all applications require these advanced type systems (e.g., fully dependent types), trading off static guarantees for (even if short-term) productivity. Untyped languages have been popular in both web applications, scripting and data science. On the other hand, if you are writing a device driver, you will probably want to take advantage of a type system that guarantees that memory usage is constrained to a given bound~\cite{liquidate-assets}. Or if you are writing a complex, distributed protocol, you might want to take advantage of Session Types for that part of the program.
 
-\section{Challenges in Type Systems}
-\label{sec:challenges-in-type-systems}
-
-Right now, to choose a particular type system, developers have to change programming languages, which might introduce interoperability problems with other components of their system. Furthermore, authors of new programming languages have to write extensive standard libraries in order for their language to be adopted by the masses.
- Most commonly used programming languages such as Java, C++ or Haskell embed a single type system that checks, either statically or dynamically, that functions and variables are used in a compatible way. 
- 
- To use more sophisticated type systems such as Liquid Types, developers either port their programs to a different programming language, or rely on compiler plugins to add another type-checking phase, like in LiquidHaskell\cite{LiquidHaskell} or LiquidJava\cite{LiquidJava}. However, it is not clear how multiple type systems would interact in the same programming language. 
- 
- \paragraph{Problem statement:} How can multiple type system co-exist in the same programming language, allowing different, valid combinations to be used in the type-checking of a program.
+In this talk, we try to address the challenge of how can multiple type system co-exist in the same programming language, allowing different, valid combinations to be used in the type-checking of a program.
  
  % Alcides is here
  
- To illustrate this in a small example, consider the program in \Cref{lst:code_before} that reads the text contents of a file and prints it to the console line-by-line. In this short snippet, there are multiple concerns to be addressed. Firstly, one wants to ensure that all function calls are done with variables of the appropriate data types. Secondly, to avoid errors due to an out of bound access, \texttt{get} should only be called with an index that exceeds the list length. Lastly, when working with resources such as a file descriptor it might be useful to track it's state and ensure that it is in a proper (closed) state at the end of program execution.
+ To illustrate this in a small example, consider the program in \Cref{lst:code_before} that reads the text contents of a file and prints it to the console line-by-line. In this short snippet, there are multiple concerns to be addressed. Firstly, one wants to ensure that all function calls are done with variables of the appropriate data types. Secondly, to avoid errors due to an out of bound access, \texttt{get} should only be called with an index that exceeds the list length. Lastly, when working with resources such as a file descriptor it might be useful to track it's state and ensure that it is in a proper (closed) state at the end of program execution. Note that the same standard library functions (\lstinline|createFD|, \lstinline|readLines|, etc...) may be needed in other programs with different type systems requirements.
  
 %\begin{itemize}
 %	\item From a type-safety perspective, one wants to make sure that e.g. \texttt{get(...)} is only called with a list and an integer index as arguments
@@ -145,7 +136,12 @@ Right now, to choose a particular type system, developers have to change program
 %	\item When working with resources such as file descriptors one wants to ensure that these are in a proper (closed) state by the end of the program execution
 %\end{itemize}
 
-Optimally, these properties should be verified independently from each other wherever possible. For example tracking the state of a resource can be done independently of it's specific type, so in case that for whatever reason this check fails we still want to be able to independently verify whether or not the state behaves as we intend it.
+
+These properties can be verified in two major ways. 
+
+All features from all type systems can be combined in single, monolithic type system, containing all the complexity that all the different type systems entail. A very similar issue can also be observed when operating on Liquid Types: In certain cases we want to define predicates on orthogonal properties that could be verified independently from one another; However, current implementation of liquid types do not allow such distinction, leading to confusing and unintelligible error messages~\cite{wits-error-messages}. 
+
+
 
 \begin{minipage}{0.4\linewidth}
 \begin{lstlisting}[caption={Simple example code},label={lst:code_before}]
@@ -197,16 +193,19 @@ fileDescriptor :: state :: {Closed}
 \end{lstlisting}
 \end{minipage}
 
-A very similar issue can also be observed when operating on Liquid Types: In certain cases we want to define predicates on orthogonal properties that could be verified independently from one another; However, current implementation of liquid types do not allow us to define distinct predicates to be verified independently. In such cases we have to merge all relevant properties into one joint predicate which can make it hard to identify the specific issue when the verification fails.
+
 
 \section{Proposed Approach}
 \label{sec:proposed-approach}
 
-To tackle these issues, we present \LayeredTypes. In our approach we view different type systems as indepent layers that can be verified in an incremental way. Layers can either verify properties in a complete stand-alone matter, or they can define dependencies to other layers which allow to build more complex type systems.
+We propose a second, more principled alternative: \LayeredTypes. In \LayeredTypes, developers can write programs, but can also define additional type systems as layers. Each layer defines the basic types, and how typechecking happens. Additionally, a layer may depend on another layer if it requires information (such as types or typing contexts) from another layer.
 
-We want to note an important distinction to Gradual Typing\cite{gradual}\cite{gradual-objects}: While the latter is concerned with only providing partial typing information and making it gradually more precise, our approach does not focus on the information provided to the verifier, but rather on \textit{how} this information.
+Type checking of programs can be partial in the sense that a program may only use some layers (even if the libraries used are defined in more layers), requiring only that each function contains type information for that layer and all dependencies. The missing layers can be added over time, if they are found to be relevant.
 
-In our work we present a python-based demonstration framework that implements this layered verification approach. Users can provide their own implementations for verification layers and define dependencies between them. In \autoref{lst:code_after} we see a set of annotations that can be added to the base code of \autoref{lst:code_before} to tackle the issues described. We define three separate layers \texttt{state}, \texttt{types} and \texttt{liquid}. Internally, the framework will build a dependency graph thus allowing to verify properties independently from one another where appropriate.
+
+We want to note an important distinction to Gradual Typing~\cite{gradual,gradual-objects}: Gradual Typing allows to only provide partial typing information in one system, but does not allow to choose different sets of types to verify. It allows to blend between having no types (0) and having types (1). Our proposal supports multiple type systems, with different combinations among them.
+
+We evaluated our approach in a prototype language. Users can provide their own implementations for verification layers and define dependencies between them. In \autoref{lst:code_after} we see a set of annotations that can be added to the base code of \autoref{lst:code_before} to tackle the issues described. We define three separate layers \texttt{state}, \texttt{types} and \texttt{liquid}. Internally, the framework will build a dependency graph thus allowing to verify properties independently from one another where appropriate.
 
 We believe that this layered, incremental approach can help build more powerful and independent type systems while at the same time making it simpler to understand the errors that might arise during verification.
 
