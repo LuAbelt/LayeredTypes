@@ -46,6 +46,8 @@
 
 % Some of our commands for this guide.
 %
+\authorrunning{Abelt and Fonseca}
+
 \newcommand{\easychair}{\textsf{easychair}}
 \newcommand{\miktex}{MiK{\TeX}}
 \newcommand{\texniccenter}{{\TeX}nicCenter}
@@ -128,7 +130,7 @@ In this talk, we try to address the challenge of how can multiple type system co
  
  % Alcides is here
  
- To illustrate this in a small example, consider the program in \Cref{lst:code_before} that reads the text contents of a file and prints it to the console line-by-line. In this short snippet, there are multiple concerns to be addressed. Firstly, one wants to ensure that all function calls are done with variables of the appropriate data types. Secondly, to avoid errors due to an out of bound access, \texttt{get} should only be called with an index that exceeds the list length. Lastly, when working with resources such as a file descriptor it might be useful to track it's state and ensure that it is in a proper (closed) state at the end of program execution. Note that the same standard library functions (\lstinline|createFD|, \lstinline|readLines|, etc...) may be needed in other programs with different type systems requirements.
+ To illustrate this in a small example, consider the program in \Cref{lst:code_before} that reads the text contents of a file and prints it to the console line-by-line. In this short snippet, there are multiple concerns to be addressed. Firstly, one wants to ensure that all function calls are done with variables of the appropriate data types. Secondly, to avoid errors due to an out of bound access, \texttt{get} should only be called with an index that does not exceed the list length. Lastly, when working with resources such as a file descriptor it might be useful to track it's state and ensure that it is in a proper (closed) state at the end of program execution. Note that the same standard library functions (\lstinline|createFD|, \lstinline|readLines|, etc...) may be needed in other programs with different type systems requirements.
  
 %\begin{itemize}
 %	\item From a type-safety perspective, one wants to make sure that e.g. \texttt{get(...)} is only called with a list and an integer index as arguments
@@ -209,7 +211,12 @@ We evaluated our approach in a prototype language. Users can provide their own i
 
 We believe that this layered, incremental approach can help build more powerful and independent type systems while at the same time making it simpler to understand the errors that might arise during verification.
 
+\input{chapters/acknowledgements.tex}
 
+\bibliographystyle{plain}
+\bibliography{bibliography}
+
+\end{document}
 %------------------------------------------------------------------------------
 \bibliographystyle{plain}
 \bibliography{literature}
