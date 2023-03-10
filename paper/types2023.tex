@@ -207,7 +207,7 @@ Type checking of programs can be partial in the sense that a program may only us
 
 We want to note an important distinction to Gradual Typing~\cite{gradual,gradual-objects}: Gradual Typing allows to only provide partial typing information in one system, but does not allow to choose different sets of types to verify. It allows to blend between having no types (0) and having types (1). Our proposal supports multiple type systems, with different combinations among them.
 
-We evaluated our approach in a prototype language. Users can provide their own implementations for verification layers and define dependencies between them. In \autoref{lst:code_after} we see a set of annotations that can be added to the base code of \autoref{lst:code_before} to tackle the issues described. We define three separate layers \texttt{state}, \texttt{types} and \texttt{liquid}. Internally, the framework will build a dependency graph thus allowing to verify properties independently from one another where appropriate.
+We evaluated our approach in a prototype language. Users can provide their own implementations for verification layers and define dependencies between them. In \Cref{lst:code_after} we see a set of annotations that can be added to the base code of \Cref{lst:code_before} to tackle the issues described. We define three separate layers \texttt{state}, \texttt{types} and \texttt{liquid}. Internally, the framework will build a dependency graph thus allowing to verify properties independently from one another where appropriate.
 
 We believe that this layered, incremental approach can help build more powerful and independent type systems while at the same time making it simpler to understand the errors that might arise during verification.
 
