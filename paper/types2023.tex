@@ -10,6 +10,7 @@
 %\documentclass[a4paper]{easychair}
 %\documentclass[letterpaper]{easychair}
 
+\usepackage{cleveref}
 \usepackage{doc}
 
 % use this if you have a long article and want to create an index
@@ -59,26 +60,26 @@
 %%
 % Regular title as in the article class.
 %
-\title{LayeredTypes -- Independently combine type systems}
+\title{LayeredTypes -- Combining dependent and independent type systems}
 
 % Authors are joined by \and. Their affiliations are given by \inst, which indexes
 % into the list defined using \institute
 %
 \author{
-Author 1\inst{1}
+Lukas Abelt\inst{1,2}
 \and
-Author 2\inst{2}
+Alcides Fonseca\inst{1}
 }
 
 % Institutes for affiliations are also joined by \and,
 \institute{
-  Institute 1,
-  Location 1\\
-  \email{mail1}
+  LASIGE,
+  Faculdade de Ciências da Universidade de Lisboa, Portugal\\
+  \email{labelt@lasige.di.fc.ul.pt},
+  \email{alcides@ciencias.ulisboa.pt}
 \and
-   Intitute 2,
-   Location 2\\
-   \email{mail2}\\
+   Saarland University,
+   Germany\\
 }
 
 %  \authorrunning{} has to be set for the shorter version of the authors' names;
@@ -118,15 +119,26 @@ Author 2\inst{2}
 %------------------------------------------------------------------------------
 \section{Context}
 \label{sec:context}
-Most programmers and computer scientists will be familiar with simple type systems that ensure that the code they write are type safe in the context of the language they are writing it in. However, much more sophisticated type systems exist that can be used to ensure specific properties of a program. Examples for this are Session Types \cite{session}, used for concurrent programs, linear type systems \cite{linear} or Refinement Types \cite{refinement}.
+Most programmers and computer scientists will be familiar with simple type systems that ensure that the code they write is type safe in the context of the language they are writing it in. However, much more sophisticated type systems exist that can be used to ensure specific properties of a program, such as resource usage (Linear Types~\cite{linear}), value predicates (Liquid Types~\cite{DBLP:conf/pldi/RondonKJ08}), or correct following of a distributed protocol (Session Types~\cite{session}).
 
-Depending on the specific type systems, they can be viewed as independently and orthogonal from one another, however sometimes type systems can also extend existing ones such as refinement types which build on top of traditional type systems and make these more specific. Most importantly not all type systems are useful for any program; When developing some low-level code meant to be run in an operating systems' kernel, they might want to use the help of a specific type system that ensure that they do not exceed certain bounds in memory usage such as shown in \cite{liquidate-assets}. However, when developing an application that is meant to be run in a highly distributed environment, using Session Types might be a more appropriate type system to ensure the correct implementation of the communication of the distributed components.
+Some of these type systems can be dependent or independent from each other. Both Liquid Types and Session Types require a base type system with primitive types (such as int, bool) to exist, but they can be orthogonal to each other, as you can have a Liquid Type whose base type is int, and a Session Type that also relies on the base value being int, ignore the liquid predicate.
+
+Given this plethora of type systems, different applications require a different subset of type systems. Not all applications require these advanced type systems (e.g., fully dependent types), trading off static guarantees for (even if short-term) productivity. Untyped languages have been popular in both web applications, scripting and data science. On the other hand, if you are writing a device driver, you will probably want to take advantage of a type system that guarantees that memory usage is constrained to a given bound~\cite{liquidate-assets}. Or if you are writing a complex, distributed protocol, you might want to take advantage of Session Types for that part of the program.
 
 \section{Challenges in Type Systems}
 \label{sec:challenges-in-type-systems}
-Most commonly used programming languages such as Java, C++ or Haskell embed a single type system that checks, either statically or dynamically, that functions and variables are used in a compatible way. To use more sophisticated type systems such as Liquid Types, one has to rely on specific tools or compiler extensions such as LiquidHaskell\cite{LiquidHaskell} or LiquidJava\cite{LiquidJava}. This leads to the issue that it is usually not trivially possible to combine different type systems in a single program. However in some cases one might require multiple different type systems to ensure different properties of a program.
 
-Consider the simple code example in \autoref{lst:code_before} that reads the text contents of a file and prints it to the console line-by-line. In this short snippet, there are multiple concerns to be addressed. Firstly, one wants to ensure that all function calls are done with variables of the appropriate data types. Secondly, to avoid errors due to an out of bound access, \texttt{get} should only be called with an index that exceeds the list length. Lastly, when working with resources such as a file descriptor it might be useful to track it's state and ensure that it is in a proper (closed) state at the end of program execution.
+Right now, to choose a particular type system, developers have to change programming languages, which might introduce interoperability problems with other components of their system. Furthermore, authors of new programming languages have to write extensive standard libraries in order for their language to be adopted by the masses.
+ Most commonly used programming languages such as Java, C++ or Haskell embed a single type system that checks, either statically or dynamically, that functions and variables are used in a compatible way. 
+ 
+ To use more sophisticated type systems such as Liquid Types, developers either port their programs to a different programming language, or rely on compiler plugins to add another type-checking phase, like in LiquidHaskell\cite{LiquidHaskell} or LiquidJava\cite{LiquidJava}. However, it is not clear how multiple type systems would interact in the same programming language. 
+ 
+ \paragraph{Problem statement:} How can multiple type system co-exist in the same programming language, allowing different, valid combinations to be used in the type-checking of a program.
+ 
+ % Alcides is here
+ 
+ To illustrate this in a small example, consider the program in \Cref{lst:code_before} that reads the text contents of a file and prints it to the console line-by-line. In this short snippet, there are multiple concerns to be addressed. Firstly, one wants to ensure that all function calls are done with variables of the appropriate data types. Secondly, to avoid errors due to an out of bound access, \texttt{get} should only be called with an index that exceeds the list length. Lastly, when working with resources such as a file descriptor it might be useful to track it's state and ensure that it is in a proper (closed) state at the end of program execution.
+ 
 %\begin{itemize}
 %	\item From a type-safety perspective, one wants to make sure that e.g. \texttt{get(...)} is only called with a list and an integer index as arguments
 %	\item Additionally, one wants to ensure that \texttt{get} is never accessed with an index that exceeds the lists length to avoid out-of-bounds access errors at runtime
