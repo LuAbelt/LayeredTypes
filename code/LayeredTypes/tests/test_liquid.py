@@ -293,7 +293,6 @@ refinement_replacement_test_vals = [
         ]
     )
 ]
-
 argument_names_substitution_test_vals = [
     (
         ["x"],
@@ -357,7 +356,6 @@ argument_names_substitution_test_vals = [
         ]
     ),
     ]
-
 end_to_end_test_vals = [
     (
         ["x"],
@@ -402,7 +400,6 @@ end_to_end_test_vals = [
         ]
     ),
 ]
-
 fun_call_var_renaming_test_vals = [
     (
         (

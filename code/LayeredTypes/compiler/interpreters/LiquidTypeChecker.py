@@ -4,7 +4,7 @@ import typing as tp
 
 import lark
 
-from aeon.core.liquid import LiquidLiteralInt, LiquidLiteralBool, LiquidVar, liquid_free_vars
+from aeon.core.liquid import LiquidVar, liquid_free_vars, LiquidApp
 from aeon.core.substitutions import substitution_in_type, substitution_in_liquid
 from aeon.core.terms import Var
 from aeon.core.types import t_int, t_bool, t_string, RefinedType
@@ -73,7 +73,6 @@ def make_name_unique(name :str, context :TypingContext) -> str:
         name = f"{name}_{p}"
 
     return name
-
 
 def substitute_refinement_names(fun_types: tp.List[RefinedType]):
     ref_var_names = [var.name for var in fun_types[:-1]]
@@ -201,17 +200,30 @@ class LiquidLayer(lark.visitors.Interpreter):
     def bin_op(self, tree):
         op = tree.children[1].value
 
+        lhs_type, ctx = self.visit(tree.children[0])
+
+        lhs_name = make_name_unique("bin_op_lhs", ctx)
+        self.__ctx = ctx.with_var(lhs_name, lhs_type)
+
+        rhs_type, ctx = self.visit(tree.children[2])
+
+        rhs_name = make_name_unique("bin_op_rhs", ctx)
+        ctx = ctx.with_var(rhs_name, rhs_type)
+        self.__ctx = ctx
+
+        # Limitation: We only support integer operations
+        if not (lhs_type.base_type == t_int and rhs_type.base_type == t_int):
+            raise TypecheckException("Expected both operands to be integers", tree.meta.line, tree.meta.column)
+        name = make_name_unique("bin_op_result", ctx)
+
         if op in {"+", "-", "*"}:
-            # Possible improvement:
-            # Use liquid type inference to determine a more precise type, like
-            # Where we need to ensure that left and right have the same base type
-            # {v:Base | v == left + right}
-            return t_int, tree.get_layer_annotation("liquid", "contexts", "context")
+            return_base_type = t_int
 
         if op in {"==", "!=", "<", ">", "<=", ">="}:
-            # Theoretically, we could use liquid type inference to determine
-            # a more precise type
-            return t_bool, tree.get_layer_annotation("liquid", "contexts", "context")
+            return_base_type = t_bool
+
+        return RefinedType(name,return_base_type, LiquidApp(op, [LiquidVar(lhs_name),LiquidVar(rhs_name)]))\
+            , ctx
     def fun_call(self, tree):
         fun_identifier = tree.children[0].value
 
