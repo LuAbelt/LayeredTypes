@@ -1,0 +1,5 @@
+x :: liquid :: {v:Int | v<5}
+
+let x := 5 - 2 in {
+    x
+}

@@ -237,6 +237,18 @@ class TestLiquidLayer(unittest.TestCase):
         type_expected = parse_type("{x:Int | x > v}")
         self.assertEqual(type_expected, e.argument_type)
 
+    def test_bin_op_add(self):
+        typecheck_correct_file(self, "/test_code/liquid/bin_op_add.fl")
+
+    def test_bin_op_mult(self):
+        typecheck_correct_file(self, "/test_code/liquid/bin_op_mult.fl")
+
+    def test_bin_op_sub(self):
+        typecheck_correct_file(self, "/test_code/liquid/bin_op_sub.fl")
+
+    def test_bin_op_cmp(self):
+        typecheck_correct_file(self, "/test_code/liquid/bin_op_cmp.fl")
+
 refinement_replacement_test_vals = [
     ([parse_type("{v:Int | v > 0}")],
      [RefinedType("$arg0", t_int,

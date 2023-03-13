@@ -1,0 +1,5 @@
+x :: liquid :: {v:Int | v>5}
+
+let x := 3 + 4 in {
+    x
+}

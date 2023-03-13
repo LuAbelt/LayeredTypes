@@ -1,0 +1,25 @@
+x :: liquid :: {v:Bool | true}
+
+let x := 3 >= 4 in {
+    x
+}
+
+let x := 3 <= 4 in {
+    x
+}
+
+let x := 3 == 4 in {
+    x
+}
+
+let x := 3 != 4 in {
+    x
+}
+
+let x := 3 > 4 in {
+    x
+}
+
+let x := 3 < 4 in {
+    x
+}

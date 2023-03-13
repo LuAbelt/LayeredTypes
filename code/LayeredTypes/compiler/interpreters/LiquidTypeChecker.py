@@ -212,18 +212,17 @@ class LiquidLayer(lark.visitors.Interpreter):
         self.__ctx = ctx
 
         # Limitation: We only support integer operations
-        if not (lhs_type.base_type == t_int and rhs_type.base_type == t_int):
+        if not (lhs_type.type == t_int and rhs_type.type == t_int):
             raise TypecheckException("Expected both operands to be integers", tree.meta.line, tree.meta.column)
         name = make_name_unique("bin_op_result", ctx)
 
         if op in {"+", "-", "*"}:
-            return_base_type = t_int
+            return_base_type = "Int"
 
         if op in {"==", "!=", "<", ">", "<=", ">="}:
-            return_base_type = t_bool
+            return_base_type = "Bool"
 
-        return RefinedType(name,return_base_type, LiquidApp(op, [LiquidVar(lhs_name),LiquidVar(rhs_name)]))\
-            , ctx
+        return mk_parser("type").parse(f"{{ {name}:{return_base_type} | {name} == ( {lhs_name} {op} {rhs_name} ) }}"), ctx
     def fun_call(self, tree):
         fun_identifier = tree.children[0].value
 
