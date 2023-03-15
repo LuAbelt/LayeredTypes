@@ -25,5 +25,5 @@ jobs:
         with:
           name: PDF
           path: |
-            'tex/acmpaper/paper.pdf'
-            'tex/types2023/types2023.pdf'
+            tex/acmpaper/paper.pdf
+            tex/types2023/types2023.pdf
