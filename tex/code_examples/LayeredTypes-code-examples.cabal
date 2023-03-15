@@ -1,0 +1,41 @@
+cabal-version: 1.12
+
+name:           LayeredTypes-code-examples
+version:        0.1.0.0
+description:    This
+homepage:
+bug-reports:
+author:         Lukas Abelt
+maintainer:     github@luabelt.de
+copyright:      2022 Lukas Abelt
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+
+library Examples
+  exposed-modules:
+      Examples.BasicLT,
+      Examples.CombinedLT
+  hs-source-dirs:
+      lib
+  build-depends:
+      liquid-ghc-prim,
+      liquid-base,
+      liquid-prelude,
+      liquid-containers,
+      liquidhaskell
+  default-language: Haskell2010
+  ghc-options: -fplugin=LiquidHaskell
+
+executable main
+  main-is: Main.hs
+  hs-source-dirs:
+      lib
+  build-depends:
+      liquid-ghc-prim,
+      liquid-base,
+      liquid-prelude,
+      liquid-containers,
+      liquidhaskell
+  default-language: Haskell2010
+  ghc-options: -fplugin=LiquidHaskell

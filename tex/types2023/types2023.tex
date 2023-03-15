@@ -1,0 +1,221 @@
+% easychair.tex,v 3.5 2017/03/15
+
+\documentclass{easychair}
+%\documentclass[EPiC]{easychair}
+%\documentclass[EPiCempty]{easychair}
+%\documentclass[debug]{easychair}
+%\documentclass[verbose]{easychair}
+%\documentclass[notimes]{easychair}
+%\documentclass[withtimes]{easychair}
+%\documentclass[a4paper]{easychair}
+%\documentclass[letterpaper]{easychair}
+
+\usepackage{cleveref}
+\usepackage{doc}
+
+% use this if you have a long article and want to create an index
+% \usepackage{makeidx}
+
+\lstset{
+  frame=none,
+  xleftmargin=2pt,
+  stepnumber=1,
+  numbers=left,
+  numbersep=5pt,
+  numberstyle=\ttfamily\tiny\color[gray]{0.3},
+  belowcaptionskip=\bigskipamount,
+  escapeinside={*'}{'*},
+  tabsize=2,
+  emphstyle={\bf},
+  commentstyle=\color{ForestGreen},
+  stringstyle=\mdseries\rmfamily,
+  showspaces=false,
+  keywordstyle=\bfseries\rmfamily,
+  columns=flexible,
+  basicstyle=\small\sffamily,
+  showstringspaces=false,
+  morecomment=[l]\%,
+}
+\lstset{basicstyle=\footnotesize\ttfamily,breaklines=true}
+% In order to save space or manage large tables or figures in a
+% landcape-like text, you can use the rotating and pdflscape
+% packages. Uncomment the desired from the below.
+%
+% \usepackage{rotating}
+% \usepackage{pdflscape}
+
+% Some of our commands for this guide.
+%
+\authorrunning{Abelt and Fonseca}
+
+\newcommand{\easychair}{\textsf{easychair}}
+\newcommand{\miktex}{MiK{\TeX}}
+\newcommand{\texniccenter}{{\TeX}nicCenter}
+\newcommand{\makefile}{\texttt{Makefile}}
+\newcommand{\latexeditor}{LEd}
+
+
+\newcommand{\LayeredTypes}{\textsc{LayeredTypes}}
+%\makeindex
+
+%% Front Matter
+%%
+% Regular title as in the article class.
+%
+\title{LayeredTypes -- Combining dependent and independent type systems}
+
+% Authors are joined by \and. Their affiliations are given by \inst, which indexes
+% into the list defined using \institute
+%
+\author{
+Lukas Abelt\inst{1,2}
+\and
+Alcides Fonseca\inst{1}
+}
+
+% Institutes for affiliations are also joined by \and,
+\institute{
+  LASIGE,
+  Faculdade de Ciências da Universidade de Lisboa, Portugal\\
+  \email{labelt@lasige.di.fc.ul.pt},
+  \email{alcides@ciencias.ulisboa.pt}
+\and
+   Saarland University,
+   Germany\\
+}
+
+%  \authorrunning{} has to be set for the shorter version of the authors' names;
+% otherwise a warning will be rendered in the running heads. When processed by
+% EasyChair, this command is mandatory: a document without \authorrunning
+% will be rejected by EasyChair
+
+
+% \titlerunning{} has to be set to either the main title or its shorter
+% version for the running heads. When processed by
+% EasyChair, this command is mandatory: a document without \titlerunning
+% will be rejected by EasyChair
+\titlerunning{Layered Types}
+
+
+\begin{document}
+\maketitle
+
+
+
+% The table of contents below is added for your convenience. Please do not use
+% the table of contents if you are preparing your paper for publication in the
+% EPiC Series or Kalpa Publications series
+
+%\setcounter{tocdepth}{2}
+%{\small
+%\tableofcontents}
+
+%\section{To mention}
+%
+%Processing in EasyChair - number of pages.
+%
+%Examples of how EasyChair processes papers. Caveats (replacement of EC
+%class, errors).
+
+%------------------------------------------------------------------------------
+\section{Context}
+\label{sec:context}
+Most programmers and computer scientists will be familiar with simple type systems that ensure that the code they write is type safe in the context of the language they are writing it in. However, much more sophisticated type systems exist that can be used to ensure specific properties of a program, such as resource usage (Linear Types~\cite{linear}), value predicates (Liquid Types~\cite{DBLP:conf/pldi/RondonKJ08}), or correct following of a distributed protocol (Session Types~\cite{session}).
+
+Some of these type systems can be dependent or independent from each other. Both Liquid Types and Session Types require a base type system with primitive types (such as int, bool) to exist, but they can be orthogonal to each other, as you can have a Liquid Type whose base type is int, and a Session Type that also relies on the base value being int, ignore the liquid predicate.
+
+Given this plethora of type systems, different applications require a different subset of type systems. Not all applications require these advanced type systems (e.g., fully dependent types), trading off static guarantees for (even if short-term) productivity. Untyped languages have been popular in both web applications, scripting and data science. On the other hand, if you are writing a device driver, you will probably want to take advantage of a type system that guarantees that memory usage is constrained to a given bound~\cite{liquidate-assets}. Or if you are writing a complex, distributed protocol, you might want to take advantage of Session Types for that part of the program.
+
+In this talk, we try to address the challenge of how can multiple type system co-exist in the same programming language, allowing different, valid combinations to be used in the type-checking of a program.
+ 
+ % Alcides is here
+ 
+ To illustrate this in a small example, consider the program in \Cref{lst:code_before} that reads the text contents of a file and prints it to the console line-by-line. In this short snippet, there are multiple concerns to be addressed. Firstly, one wants to ensure that all function calls are done with variables of the appropriate data types. Secondly, to avoid errors due to an out of bound access, \texttt{get} should only be called with an index that does not exceed the list length. Lastly, when working with resources such as a file descriptor it might be useful to track it's state and ensure that it is in a proper (closed) state at the end of program execution. Note that the same standard library functions (\lstinline|createFD|, \lstinline|readLines|, etc...) may be needed in other programs with different type systems requirements.
+ 
+%\begin{itemize}
+%	\item From a type-safety perspective, one wants to make sure that e.g. \texttt{get(...)} is only called with a list and an integer index as arguments
+%	\item Additionally, one wants to ensure that \texttt{get} is never accessed with an index that exceeds the lists length to avoid out-of-bounds access errors at runtime
+%	\item When working with resources such as file descriptors one wants to ensure that these are in a proper (closed) state by the end of the program execution
+%\end{itemize}
+
+
+These properties can be verified in two major ways. 
+
+All features from all type systems can be combined in single, monolithic type system, containing all the complexity that all the different type systems entail. A very similar issue can also be observed when operating on Liquid Types: In certain cases we want to define predicates on orthogonal properties that could be verified independently from one another; However, current implementation of liquid types do not allow such distinction, leading to confusing and unintelligible error messages~\cite{wits-error-messages}. 
+
+
+
+\begin{minipage}{0.4\linewidth}
+\begin{lstlisting}[caption={Simple example code},label={lst:code_before}]
+printLines lines idx len {
+  if len != idx then {
+    line = get(lines, idx)
+    print(line)
+    printLines(lines, idx+1, len)
+  }
+}
+
+filename = "input.txt"
+fileDescriptor = createFD(filename)
+
+open(fileDescriptor)
+
+lines = readLines(fileDescriptor)
+len = length(lines)
+printLines(lines, 0, len)
+
+close(fileDescriptor)
+\end{lstlisting}
+\end{minipage}%
+\begin{minipage}{0.59\linewidth}
+\begin{lstlisting}[caption={Annotations for \LayeredTypes},label={lst:code_after}]
+-- State Layer definitions
+createFD :: state :: {} -> { Closed }
+openFile :: state :: {Closed => Open} -> {}
+readLines :: state :: {Open => Consumed} -> {}
+closeFile :: state :: {Consumed => Closed} -> {}
+
+-- Type layer definitions
+get :: types :: List -> int -> string
+length :: types :: List -> int
+createFD :: types :: string -> FileHandle
+open :: types :: FileHandle -> void
+readLines :: types :: FileHandle -> List
+close :: types :: FileHandle -> void
+print :: types :: string -> void
+printLines :: types :: List -> int -> int -> void
+
+-- Liquid layer definitions
+length :: {List | true} -> {v:int | v>=0}
+printLines :: liquid :: { List | true } -> { l:int | l>=0 } -> { i:int | i<=l }
+get :: liquid :: { List | true } -> { i:int | i<len }
+
+-- State requirement at the end of the program
+fileDescriptor :: state :: {Closed}	
+\end{lstlisting}
+\end{minipage}
+
+
+
+\section{Proposed Approach}
+\label{sec:proposed-approach}
+
+We propose a second, more principled alternative: \LayeredTypes. In \LayeredTypes, developers can write programs, but can also define additional type systems as layers. Each layer defines the basic types, and how typechecking happens. Additionally, a layer may depend on another layer if it requires information (such as types or typing contexts) from another layer.
+
+Type checking of programs can be partial in the sense that a program may only use some layers (even if the libraries used are defined in more layers), requiring only that each function contains type information for that layer and all dependencies. The missing layers can be added over time, if they are found to be relevant.
+
+
+We want to note an important distinction to Gradual Typing~\cite{gradual,gradual-objects}: Gradual Typing allows to only provide partial typing information in one system, but does not allow to choose different sets of types to verify. It allows to blend between having no types (0) and having types (1). Our proposal supports multiple type systems, with different combinations among them.
+
+We evaluated our approach in a prototype language. Users can provide their own implementations for verification layers and define dependencies between them. In \Cref{lst:code_after} we see a set of annotations that can be added to the base code of \Cref{lst:code_before} to tackle the issues described. We define three separate layers \texttt{state}, \texttt{types} and \texttt{liquid}. Internally, the framework will build a dependency graph thus allowing to verify properties independently from one another where appropriate.
+
+We believe that this layered, incremental approach can help build more powerful and independent type systems while at the same time making it simpler to understand the errors that might arise during verification.
+
+\input{../chapters/acknowledgements.tex}
+
+\bibliographystyle{plain}
+\bibliography{literature.bib}
+
+\end{document}
+
+%------------------------------------------------------------------------------
