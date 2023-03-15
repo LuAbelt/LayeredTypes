@@ -2,7 +2,7 @@ name: Build Paper
 on: 
   push:
     paths:
-      - 'paper/**'
+      - 'tex/**'
       - '.github/workflows/latex.yml'
 jobs:
   build_latex:
@@ -10,13 +10,20 @@ jobs:
     steps:
       - name: Set up Git repository
         uses: actions/checkout@v3
-      - name: Compile LaTeX document
+      - name: Compile ACM Paper
         uses: xu-cheng/latex-action@v2
         with:
           root_file: paper.tex
-          working_directory: "paper"
+          working_directory: "tex/acmpaper"
+      - name: Compile Type2023 Paper
+        uses: xu-cheng/latex-action@v2
+        with:
+          root_file: types2023.tex
+          working_directory: "tex/types2023"
       - name: Upload PDF file
         uses: actions/upload-artifact@v3
         with:
           name: PDF
-          path: 'paper/paper.pdf'
+          path: |
+            'tex/acmpaper/paper.pdf'
+            'tex/types2023/types2023.pdf'
