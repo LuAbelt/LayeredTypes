@@ -17,13 +17,15 @@ from compiler.interpreters.CheckCF import CheckCF
 from compiler.transformers.CreateAnnotatedTree import CreateAnnotatedTree as AnnotateTree
 from compiler.Interpreters import SimpleInterpreter
 
+
 class LayerVerificationState(Enum):
-    UNPROCESSED = 0
-    VERIFYING = 1
-    SUCCESS = 2
-    FAILURE = 3
-    BLOCKED = 4
-    CYCLE = 5
+    UNPROCESSED = 0 # Layer has not been processed yet
+    VERIFYING = 1   # Unused at the moment. Used for parallel verification
+    SUCCESS = 2     # Layer has been successfully verified
+    FAILURE = 3     # Layer has failed verification
+    BLOCKED = 4     # Layer has been blocked by a layer that failed verification
+    CYCLE = 5       # Layer is part of a cycle
+    CYCLE_BLOCKED = 6   # Layer is blocked by a layer that is part of a cycle
 
 class LayeredCompiler:
     def __init__(self, layer_base_dir, implementations_file=None):
@@ -89,7 +91,7 @@ class LayeredCompiler:
 
             has_cycle = True
 
-            for layer_id in e.args[0]:
+            for layer_id in e.args[1]:
                 self.layer_states[layer_id] = LayerVerificationState.CYCLE
 
         while topological_sorter.is_active():
@@ -123,6 +125,11 @@ class LayeredCompiler:
                     for node in topological_sorter.get_ready():
                         self.layer_states[node] = LayerVerificationState.BLOCKED
                         topological_sorter.done(node)
+
+        # All layers that are still unprocessed are blocked because they depend on a layer that is part of a cycle
+        for layer_id in self.layer_states:
+            if self.layer_states[layer_id] == LayerVerificationState.UNPROCESSED:
+                self.layer_states[layer_id] = LayerVerificationState.CYCLE_BLOCKED
 
         # Return true iff all layers are successfully verified
         return all([self.layer_states[layer_id] == LayerVerificationState.SUCCESS for layer_id in self.layer_states])

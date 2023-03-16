@@ -1,6 +1,7 @@
 import unittest
 from graphlib import CycleError
 
+from compiler.Compiler import LayerVerificationState
 from utils import get_compiler, full_path, call_order
 
 class TestLayerDefinitions(unittest.TestCase):
@@ -70,6 +71,15 @@ class TestLayerDependencies(unittest.TestCase):
         with self.assertRaises(CycleError):
             compiler.typecheck(src_file)
 
+    def test_circular_dependency_2(self):
+        compiler = get_compiler()
+        src_file = full_path("/test_code/layers/create_cycle.fl")
+
+        compiler.typecheck(src_file, raise_on_error=False)
+
+        self.assertEqual(compiler.layer_states["cycleA"], LayerVerificationState.CYCLE)
+        self.assertEqual(compiler.layer_states["cycleB"], LayerVerificationState.CYCLE)
+
     def test_implicit_dependency(self):
         compiler = get_compiler()
         src_file = full_path("/test_code/layers/implicit_dependency.fl")
@@ -92,6 +102,15 @@ class TestLayerDependencies(unittest.TestCase):
         with self.assertRaises(CycleError) as e:
             compiler.typecheck(src_file)
 
+    def test_implicit_cycle_2(self):
+        compiler = get_compiler()
+        src_file = full_path("/test_code/layers/implicit_cycle.fl")
+
+        compiler.typecheck(src_file, raise_on_error=False)
+
+        self.assertEqual(compiler.layer_states["cycleA"], LayerVerificationState.CYCLE)
+        self.assertEqual(compiler.layer_states["cycleB"], LayerVerificationState.CYCLE)
+
     def test_implicit_multiple_layers(self):
         compiler = get_compiler()
         src_file = full_path("/test_code/layers/implicit_multiple_layers.fl")
@@ -108,4 +127,23 @@ class TestLayerDependencies(unittest.TestCase):
         self.assertTrue("D" in compiler.layers)
 
         self.assertIn(call_order, [["A", "B", "C", "D"], ["A", "C", "B", "D"]])
+
+    def test_complex_layers(self):
+        compiler = get_compiler()
+        src_file = full_path("/test_code/layers/complex_layers.fl")
+
+        call_order.clear()
+
+        compiler.typecheck(src_file, raise_on_error=False)
+
+        self.assertEqual(LayerVerificationState.SUCCESS, compiler.layer_states["A"])
+        self.assertEqual(LayerVerificationState.SUCCESS, compiler.layer_states["B"])
+        self.assertEqual(LayerVerificationState.SUCCESS, compiler.layer_states["C"])
+        self.assertEqual(LayerVerificationState.SUCCESS, compiler.layer_states["D"])
+        self.assertEqual(LayerVerificationState.CYCLE, compiler.layer_states["cycleA"])
+        self.assertEqual(LayerVerificationState.CYCLE, compiler.layer_states["cycleB"])
+        self.assertEqual(LayerVerificationState.FAILURE, compiler.layer_states["failLayerA"])
+        self.assertEqual(LayerVerificationState.BLOCKED, compiler.layer_states["blockedLayerB"])
+        self.assertEqual(LayerVerificationState.BLOCKED, compiler.layer_states["blockedLayerC"])
+        self.assertEqual(LayerVerificationState.CYCLE_BLOCKED, compiler.layer_states["dependOnCycleA"])
 
