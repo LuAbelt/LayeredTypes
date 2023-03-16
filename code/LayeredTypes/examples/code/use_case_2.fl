@@ -1,70 +1,49 @@
--- Conceptually, I would like to have this:
--- We can define a "named" refinement as a kind of template instantiation.
--- In the examples below the names are "Property1", "Property2", "Property3", and "Property4".
-Liquid<Property1> :: { /* Refinement */ }
-Liquid<Property2> :: { /* Refinement */ }
-Liquid<Property3> :: { /* Refinement */ }
-Liquid<Property4> :: { /* Refinement */ }
-
--- We can then use these named refinements to superimpose them on variables or functions:
-identifier :: Liquid :: { Property1, Property2 }
-function :: Liquid :: { Property3, Property4 }
-
--- Then, let's assume we call 'function' with an argument 'identifier':
-function(identifier)
-
--- In a normal liquid type checker, the type checker would ultimately check the following (simplified):
--- (Property1 && Property2) => (Property3 && Property4)
--- If this no fails there is no way to tell whether this is caused by Property3 or Property4 not being satisfied.
-
--- With our approach, each named refinement performs a type check on it's own.
--- The main difference is that the type checker will only consider it's own named refinement for the right hand side.
--- This means, that we will have 4 individual runs of the type checker, verifying the following:
--- (Property1 && Property2) => true [From Liquid<Property1>]
--- (Property1 && Property2) => true [From Liquid<Property2>]
--- (Property1 && Property2) => Property3 [From Liquid<Property3>]
--- (Property1 && Property2) => Property4 [From Liquid<Property4>]
-
--- This is a bit more verbose, but it allows us to pinpoint the exact refinement that is causing the type error.
--- It is still not possible to determine whether the error is caused by Property1 or Property2, but this is a limitation of the type checker.
--- Also, this is a completely independent area of research.
 
 
 swap list idx1 idx2 {
-    tmp := get_element(list, idx1)
-    set_element(list, idx1, get_element(list, idx2))
-    set_element(list, idx2, tmp)
+    let tmp := get_element(list, idx1) in {
+        let tmp_list := set_list_element(list, idx1, get_element(list, idx2)) in {
+            set_list_element(tmp_list, idx2, tmp)
+        }
+    }
 }
 
 bubble_up list idx {
-    cond := get_element(list, idx) > get_element(list, (idx + 1))
-    if cond then {
-        swap(list, idx, (idx + 1))
+    let cond := get_element(list, idx) > get_element(list, (idx + 1)) in {
+        if cond then {
+            swap(list, idx, (idx + 1))
+        }
     }
 
-    cond := idx < len(list) - 2
-
-    if cond then {
-        list := bubble_up(list, (idx + 1))
+    let cond := idx < len(list) - 2 in {
+        if cond then {
+            bubble_up(list, (idx + 1))
+        } else {
+            list
+        }
     }
-
-    list
 }
 
 bubbleSort_rec list cnt {
-    cond := cnt > 0
-    if cond then {
-        list := bubble_up(list, 0)
-        list := bubbleSort_rec(list, (cnt - 1))
+    let cond := cnt > 0 in {
+        if cond then {
+            let list1 := bubble_up(list, 0) in {
+                bubbleSort_rec(list1, (cnt - 1))
+            }
+        } else {
+            list
+        }
     }
-
-    list
 }
 
 bubbleSort list {
     bubbleSort_rec(list, (len(list) - 1))
 }
 
-list := get_list()
-
-bubbleSort(list)
+let list := get_list() in {
+    print(list)
+    let sortedList := bubbleSort(list) in {
+        print(sortedList)
+        sortedList
+    }
+}
