@@ -83,7 +83,7 @@ class TestLayerDependencies(unittest.TestCase):
         self.assertTrue("A" in compiler.layers)
         self.assertTrue("B" in compiler.layers)
 
-        self.assertEqual(call_order, ["A", "B"])
+        self.assertEqual(["A", "B"], call_order)
 
     def test_implicit_cycle(self):
         compiler = get_compiler()

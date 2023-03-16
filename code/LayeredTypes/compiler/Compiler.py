@@ -93,7 +93,9 @@ class LayeredCompiler:
                 self.layer_states[layer_id] = LayerVerificationState.CYCLE
 
         while topological_sorter.is_active():
+            processed_one = False
             for node in topological_sorter.get_ready():
+                processed_one = True
                 assert self.layer_states[node] == LayerVerificationState.UNPROCESSED
                 layer_handle = self.layers[node]
                 try:
@@ -109,7 +111,7 @@ class LayeredCompiler:
             # We do not want to process nodes that depend on a failed node
             # This is done by marking the node as done, so it is not returned by get_ready()
             # We do this until there are no more nodes to process
-            if topological_sorter.is_active() and len(topological_sorter.get_ready()) == 0:
+            if not processed_one:
                 break
 
         # There might be unparsed layers, which are blocked due to failed dependencies
