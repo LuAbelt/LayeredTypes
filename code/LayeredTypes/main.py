@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     try:
         if options.typecheck:
-            compiler.typecheck(file)
+            compiler.typecheck(file, verbose=True, raise_on_error=False)
         else:
             result = compiler.run(file)
             print(f"Program returned: {result}")

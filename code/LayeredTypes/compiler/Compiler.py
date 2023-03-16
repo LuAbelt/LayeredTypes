@@ -204,7 +204,8 @@ class LayeredCompiler:
         return self.interpreter.run(tree)
 
     def print_layer_states(self):
-        for layer_id, state in self.layer_states:
+        for layer_id in self.layer_states:
+            state = self.layer_states[layer_id]
             # Print layer name and state
             # Color of state depends on state:
             #   - Success: Green
@@ -217,7 +218,8 @@ class LayeredCompiler:
                 LayerVerificationState.FAILURE: "red",
                 LayerVerificationState.BLOCKED: "yellow",
                 LayerVerificationState.UNPROCESSED: "white",
-                LayerVerificationState.CYCLE: "magenta"
+                LayerVerificationState.CYCLE: "magenta",
+                LayerVerificationState.CYCLE_BLOCKED: "cyan"
             }
 
 
