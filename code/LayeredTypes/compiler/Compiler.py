@@ -1,9 +1,11 @@
 import graphlib
 import os.path
+from enum import Enum
 from warnings import warn
 
 import lark
 from pathlib import Path
+from termcolor import colored
 
 from compiler.Exceptions import LayerException
 from compiler.transformers.RemoveTokens import RemoveTokens
@@ -15,9 +17,19 @@ from compiler.interpreters.CheckCF import CheckCF
 from compiler.transformers.CreateAnnotatedTree import CreateAnnotatedTree as AnnotateTree
 from compiler.Interpreters import SimpleInterpreter
 
+class LayerVerificationState(Enum):
+    UNPROCESSED = 0
+    VERIFYING = 1
+    SUCCESS = 2
+    FAILURE = 3
+    BLOCKED = 4
+    CYCLE = 5
+
 class LayeredCompiler:
     def __init__(self, layer_base_dir, implementations_file=None):
 
+        self.layer_states = dict()
+        self.layer_errors = dict()
         self.layer_base_dir = Path(layer_base_dir)
 
         if implementations_file is None:
@@ -40,26 +52,85 @@ class LayeredCompiler:
         self.layers = dict()
         self.interpreter = SimpleInterpreter(self.implementations_file)
 
-    def typecheck(self, input_file, check_cf=True):
+    def typecheck(self, input_file, check_cf=True, verbose=False, raise_on_error=True):
         tree = self.parse(input_file)
 
-        self.__typecheck(tree, check_cf)
+        self.__typecheck(tree, check_cf, raise_on_error)
+
+        if verbose:
+            self.print_layer_states()
 
         return True
 
-    def __typecheck(self, tree, check_cf=True):
-        lv = CollectLayers()
-        cf_check = CheckCF(self.interpreter.external_functions_names)
-
-        tree = lv.transform(tree)
+    def __typecheck(self, tree, check_cf=True, raise_on_error=True):
         tree = AnnotateTree().transform(tree)
 
         if check_cf:
+            cf_check = CheckCF(self.interpreter.external_functions_names)
             cf_check.visit(tree)
+
+        layer_graph = self.build_layer_graph(tree)
+
+        self.layer_states = {layer_id: LayerVerificationState.UNPROCESSED for layer_id in layer_graph}
+        # Store the processing states for all layers
+        for layer_id in layer_graph:
+            self.layer_states.update({layer_id: LayerVerificationState.UNPROCESSED for layer_id in layer_graph[layer_id]})
+
+        # We use graphlib to process layers in topological order
+        # Currently this is not yet parallelized, but in the future we might want to do that
+
+        topological_sorter = graphlib.TopologicalSorter(layer_graph)
+
+        try:
+            topological_sorter.prepare()
+        except graphlib.CycleError as e:
+            if raise_on_error:
+                raise graphlib.CycleError(f"Cycle in layer dependencies: {e.args[0]}")
+
+            has_cycle = True
+
+            for layer_id in e.args[0]:
+                self.layer_states[layer_id] = LayerVerificationState.CYCLE
+
+        while topological_sorter.is_active():
+            for node in topological_sorter.get_ready():
+                assert self.layer_states[node] == LayerVerificationState.UNPROCESSED
+                layer_handle = self.layers[node]
+                try:
+                    tree = layer_handle.typecheck(tree)
+                    topological_sorter.done(node)
+                    self.layer_states[node] = LayerVerificationState.SUCCESS
+                except Exception as e:
+                    if raise_on_error:
+                        raise LayerException(node,e)
+                    self.layer_states[node] = LayerVerificationState.FAILURE
+                    self.layer_errors[node] = LayerException(node,e)
+
+            # We do not want to process nodes that depend on a failed node
+            # This is done by marking the node as done, so it is not returned by get_ready()
+            # We do this until there are no more nodes to process
+            if topological_sorter.is_active() and len(topological_sorter.get_ready()) == 0:
+                break
+
+        # There might be unparsed layers, which are blocked due to failed dependencies
+        for layer_id in self.layer_states:
+            if self.layer_states[layer_id] == LayerVerificationState.FAILURE:
+                # We mark the node as done, so we can mark all nodes that depend on it as blocked
+                topological_sorter.done(layer_id)
+                while topological_sorter.is_active():
+                    for node in topological_sorter.get_ready():
+                        self.layer_states[node] = LayerVerificationState.BLOCKED
+                        topological_sorter.done(node)
+
+        # Return true iff all layers are successfully verified
+        return all([self.layer_states[layer_id] == LayerVerificationState.SUCCESS for layer_id in self.layer_states])
+
+    def build_layer_graph(self, tree):
+        lv = CollectLayers()
+        lv.transform(tree)
 
         layer_graph = {}
         self.layers = {}
-
         implicit_layers = set()
 
         for layer_id in lv.layers:
@@ -82,12 +153,11 @@ class LayeredCompiler:
                     layer_graph[implied_layer] = set()
                 layer_graph[implied_layer].add(layer_id)
 
-
-
         while len(implicit_layers) > 0:
             layer_id = implicit_layers.pop()
             if not layer_id in self.layers:
-                warn(f"Layer {layer_id} was not loaded during CollectLayers, but is required by at least one other layer. Loading it now.")
+                warn(
+                    f"Layer {layer_id} was not loaded during CollectLayers, but is required by at least one other layer. Loading it now.")
                 self.layers[layer_id] = LayerImplWrapper(self.layer_base_dir, Layer(layer_id))
                 required_layers = self.layers[layer_id].depends_on()
                 layer_graph[layer_id] = required_layers
@@ -97,24 +167,13 @@ class LayeredCompiler:
                 for layer in required_layers:
                     layer_graph[layer].add(layer_id)
                 implicit_layers.update(required_layers - set(lv.layers.keys()))
-
-        # Check for cycles
-        try:
-            topo_order = [n for n in graphlib.TopologicalSorter(layer_graph).static_order()]
-        except graphlib.CycleError as e:
-            raise graphlib.CycleError(f"Cycle in layer dependencies: {e.args[0]}")
-
-        # Incrementally typecheck each layer based on their topological order
-        for layer_id in topo_order:
-            layer_handle = self.layers[layer_id]
-            try:
-                tree = layer_handle.typecheck(tree)
-            except Exception as e:
-                raise LayerException(layer_id,e)
-
-        return tree
+        return layer_graph
 
     def parse(self, input_file):
+        # Reset layer errors and states since these belong to the last typecheck
+        self.layer_errors = dict()
+        self.layer_states = dict()
+
         with open(os.path.abspath(input_file)) as f:
             tree = self.parser.parse(f.read())
 
@@ -134,6 +193,27 @@ class LayeredCompiler:
         tree = self.compile(program)
 
         return self.interpreter.run(tree)
+
+    def print_layer_states(self):
+        for layer_id, state in self.layer_states:
+            # Print layer name and state
+            # Color of state depends on state:
+            #   - Success: Green
+            #   - Failure: Red
+            #   - Blocked: Yellow
+            #   - Unprocessed: White
+            #   - Cycle: Magenta
+            colors = {
+                LayerVerificationState.SUCCESS: "green",
+                LayerVerificationState.FAILURE: "red",
+                LayerVerificationState.BLOCKED: "yellow",
+                LayerVerificationState.UNPROCESSED: "white",
+                LayerVerificationState.CYCLE: "magenta"
+            }
+
+
+
+            print(colored(f"{layer_id}: {state.name}", colors[state]))
 
 
 
