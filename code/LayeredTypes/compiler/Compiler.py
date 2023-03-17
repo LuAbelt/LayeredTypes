@@ -33,6 +33,7 @@ class LayeredCompiler:
         self.layer_states = dict()
         self.layer_errors = dict()
         self.layer_base_dir = Path(layer_base_dir)
+        self.cycle = set()
 
         if implementations_file is None:
             self.implementations_file = None
@@ -60,7 +61,7 @@ class LayeredCompiler:
         self.__typecheck(tree, check_cf, raise_on_error)
 
         if verbose:
-            self.print_layer_states()
+            self.print_summary()
 
         return True
 
@@ -89,7 +90,7 @@ class LayeredCompiler:
             if raise_on_error:
                 raise graphlib.CycleError(f"Cycle in layer dependencies: {e.args[0]}")
 
-            has_cycle = True
+            self.cycle = set(e.args[1])
 
             for layer_id in e.args[1]:
                 self.layer_states[layer_id] = LayerVerificationState.CYCLE
@@ -182,6 +183,7 @@ class LayeredCompiler:
         # Reset layer errors and states since these belong to the last typecheck
         self.layer_errors = dict()
         self.layer_states = dict()
+        self.cycle = set()
 
         with open(os.path.abspath(input_file)) as f:
             tree = self.parser.parse(f.read())
@@ -194,8 +196,9 @@ class LayeredCompiler:
     def compile(self, program):
         tree = self.parse(program)
 
-        if not self.__typecheck(tree):
-            raise RuntimeError("Typechecking failed")
+        if not self.__typecheck(tree, raise_on_error=False):
+            self.print_summary()
+            exit(1)
 
         return tree
     def run(self, program):
@@ -204,6 +207,7 @@ class LayeredCompiler:
         return self.interpreter.run(tree)
 
     def print_layer_states(self):
+        print("The following layers were processed:")
         for layer_id in self.layer_states:
             state = self.layer_states[layer_id]
             # Print layer name and state
@@ -222,10 +226,31 @@ class LayeredCompiler:
                 LayerVerificationState.CYCLE_BLOCKED: "cyan"
             }
 
+            print(colored(f"\t{layer_id}: {state.name}", colors[state]))
 
+        print("\n")
 
-            print(colored(f"{layer_id}: {state.name}", colors[state]))
+    def print_layer_errors(self):
+        # Print here all errors that occurred during typechecking
+        if len(self.layer_errors) > 0:
+            print("The following layers failed during typechecking:")
+            for layer_id in self.layer_errors:
+                print(f"\t{layer_id}:\n\t {self.layer_errors[layer_id]}")
 
+    def print_summary(self):
+        if len(self.layer_errors) == 0 and len(self.cycle) == 0:
+            print("All layers were successfully verified.")
+        else:
+            print("Not all layers could be verified.")
+
+        if len(self.cycle) > 0:
+            print("The following cycle in the layer dependency graph was detected:")
+
+            for layer_id in self.cycle:
+                print(f"\t{layer_id}")
+
+        self.print_layer_states()
+        self.print_layer_errors()
 
 
 
