@@ -24,3 +24,13 @@ def f():
 
 def noArgs():
     return 1
+
+def initList():
+    return []
+
+def append(ls, val):
+    ls.append(val)
+    return ls
+
+def create_list(n: int):
+    return list(range(n))

@@ -1,0 +1,7 @@
+len :: liquid :: {l:List | true} -> { v:Int | v >= 0 }
+createList :: liquid :: {v:Int | v >= 0 } -> {l:List | len(l) == v}
+l1 :: liquid :: {l:List | len(l) == 10}
+
+let l1 := createList(10) in {
+    l1
+}
