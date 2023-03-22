@@ -103,10 +103,11 @@ def rename_variable(context, original_name, fun_identifier, all_arg_names, remai
 
 
 class LiquidLayer(lark.visitors.Interpreter):
-    def __init__(self):
+    def __init__(self, layer_identifier: str= "liquid"):
         self.__types = {}
         self.__fun_types = {}
         self.__ctx = EmptyContext()
+        self.__layer_identifier = layer_identifier
         pass
 
     def visit(self, tree):
@@ -121,12 +122,12 @@ class LiquidLayer(lark.visitors.Interpreter):
     def __annotate(self, tree):
 
         for identifier in self.__types:
-            tree.add_layer_annotation("liquid", identifier, "type", self.__types[identifier])
+            tree.add_layer_annotation(self.__layer_identifier, identifier, "type", self.__types[identifier])
 
         for fun_identifier in self.__fun_types:
-            tree.add_layer_annotation("liquid", fun_identifier, "function_type", self.__fun_types[fun_identifier])
+            tree.add_layer_annotation(self.__layer_identifier, fun_identifier, "function_type", self.__fun_types[fun_identifier])
 
-        tree.add_layer_annotation("liquid", "contexts", "context", self.__ctx)
+        tree.add_layer_annotation(self.__layer_identifier, "contexts", "context", self.__ctx)
 
 
     def assign(self, tree: AnnotatedTree):
@@ -136,13 +137,13 @@ class LiquidLayer(lark.visitors.Interpreter):
         identifier = tree.children[0].value
 
         # Try to get the type from context if it has already been assigned
-        ctx = tree.get_layer_annotation("liquid", "contexts", "context")
+        ctx = tree.get_layer_annotation(self.__layer_identifier, "contexts", "context")
 
         id_type = ctx.type_of(identifier)
 
         if id_type is None:
             # Type has not been assigned yet, try to get it from the types dictionary
-            id_type = tree.get_layer_annotation("liquid", identifier, "type")
+            id_type = tree.get_layer_annotation(self.__layer_identifier, identifier, "type")
 
         if id_type is None:
             # Type is still undefined, raise an error
@@ -154,7 +155,7 @@ class LiquidLayer(lark.visitors.Interpreter):
         identifier = tree.children[0].children[0].value
         layer_id = tree.children[1].children[0].value
 
-        if layer_id != "liquid":
+        if layer_id != self.__layer_identifier:
             return
 
         refinement_str = [x.strip() for x in tree.children[2].value.split("->")]
@@ -187,15 +188,15 @@ class LiquidLayer(lark.visitors.Interpreter):
 
 
     def num(self, tree):
-        return mk_parser("type").parse("{v:Int | v == "+tree.children[0].value+" }"), tree.get_layer_annotation("liquid", "contexts", "context")
+        return mk_parser("type").parse("{v:Int | v == "+tree.children[0].value+" }"), tree.get_layer_annotation(self.__layer_identifier, "contexts", "context")
 
     def true(self, tree):
         return mk_parser("type").parse("{v:Bool | v }")\
-            , tree.get_layer_annotation("liquid", "contexts", "context")
+            , tree.get_layer_annotation(self.__layer_identifier, "contexts", "context")
 
     def false(self, tree):
         return mk_parser("type").parse("{v:Bool | v }")\
-               , tree.get_layer_annotation("liquid", "contexts", "context")
+               , tree.get_layer_annotation(self.__layer_identifier, "contexts", "context")
 
     def bin_op(self, tree):
         op = tree.children[1].value
@@ -226,7 +227,7 @@ class LiquidLayer(lark.visitors.Interpreter):
     def fun_call(self, tree):
         fun_identifier = tree.children[0].value
 
-        expected_arg_types = tree.get_layer_annotation("liquid", fun_identifier, "function_type")
+        expected_arg_types = tree.get_layer_annotation(self.__layer_identifier, fun_identifier, "function_type")
 
         if expected_arg_types is None:
             raise LiquidTypeUndefinedError(fun_identifier, tree.meta.line, tree.meta.column)
@@ -241,7 +242,7 @@ class LiquidLayer(lark.visitors.Interpreter):
                                               tree.meta.line,
                                               tree.meta.column)
 
-        context = tree.get_layer_annotation("liquid", "contexts", "context")
+        context = tree.get_layer_annotation(self.__layer_identifier, "contexts", "context")
         all_arg_names = [x.name for x in expected_arg_types]
         # Check that the types of the arguments are correct
         for i in range(actual_num_args):
@@ -277,7 +278,7 @@ class LiquidLayer(lark.visitors.Interpreter):
         fun_identifier = tree.children[0].value
         # We want to explicitly copy the function type, as we will modify it
         # If we wouldn't copy it this would have implications when calling the function
-        fun_type = deepcopy(tree.get_layer_annotation("liquid", fun_identifier, "function_type"))
+        fun_type = deepcopy(tree.get_layer_annotation(self.__layer_identifier, fun_identifier, "function_type"))
 
         if fun_type is None:
             raise LiquidTypeUndefinedError(fun_identifier, tree.meta.line, tree.meta.column)
@@ -318,7 +319,7 @@ class LiquidLayer(lark.visitors.Interpreter):
     def let_stmt(self, tree):
         ident = tree.children[0].children[0].value
 
-        type_expected = tree.get_layer_annotation("liquid", ident, "type")
+        type_expected = tree.get_layer_annotation(self.__layer_identifier, ident, "type")
 
         if type_expected is None:
             raise LiquidTypeUndefinedError(ident, tree.meta.line, tree.meta.column)
