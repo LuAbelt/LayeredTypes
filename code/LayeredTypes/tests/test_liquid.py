@@ -249,6 +249,9 @@ class TestLiquidLayer(unittest.TestCase):
     def test_bin_op_cmp(self):
         typecheck_correct_file(self, "/test_code/liquid/bin_op_cmp.fl")
 
+    def test_uninterpreted_fun(self):
+        typecheck_correct_file(self, "/test_code/liquid/uninterpreted_fun.fl")
+
 refinement_replacement_test_vals = [
     ([parse_type("{v:Int | v > 0}")],
      [RefinedType("$arg0", t_int,
