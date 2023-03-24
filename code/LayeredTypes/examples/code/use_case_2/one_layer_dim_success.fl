@@ -1,0 +1,40 @@
+-- Use Case 2: Machine Learning Pipelines
+-- We support some basic operations on data sets
+-- For the running example we assume data sets are 2D matrices
+
+n_rows :: liquid :: { d:DataSet | true } -> { r:Int | (r >= 0) && (r == (n_rows(d)) }
+n_cols :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c == (n_cols(d)) }
+
+-- Row related operations
+add_rows :: liquid :: { d:DataSet | n_cols(d) > 0 } -> {n:Int | n>0} -> { d2:DataSet | (n_rows(d2) == (n_rows(d) + n)) }
+get_row :: liquid :: { d:DataSet | true } -> { r:Int | (r >= 0) && (r < (n_rows(d))) } -> { d2:DataSet | (n_cols(d2) == (n_cols(d)) && (n_rows(d2)==1) ) }
+sample :: liquid :: { d:DataSet | true } -> { n:Int | (n >= 0) && (n <= (n_rows(d))) } -> { d2:DataSet | (n_rows(d2) == n) }
+
+-- Column related operations
+add_cols :: liquid :: { d:DataSet | true } -> {n:Int | n>0} -> { d2:DataSet | (n_cols(d2) == (n_cols(d) + n)) }
+extract_col :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c < (n_cols(d))) } -> { d2:DataSet | (n_cols(d2) == 1) }
+reduce_cols :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c < (n_cols(d))) } -> { d2:DataSet | (n_cols(d2) == c) }
+
+-- Operations that depend on both the number of rows and columns
+train :: liquid :: { d:DataSet | (n_rows(d) >= 10 * (n_cols(d))) } -> { m:Model | true }
+
+-- Initial data set
+create_empty_dataset :: liquid :: { n:Int | (n >= 0) } -> { d:DataSet | (n_cols(d) == n) && (n_rows(d) == 0)}
+
+
+-- Scenario 3: Operations with rows and columns
+-- We show that calling train on this data set fails because we do not have enough rows
+
+let empty_dataset := create_empty_dataset(10) in {
+    let dataset := add_rows(empty_dataset, 50) in {
+
+       let single_column := extract_col(dataset, 5) in {
+           train(single_column)
+       }
+
+       let small_dataset := reduce_cols(dataset, 5) in {
+           train(small_dataset)
+       }
+    }
+}
+

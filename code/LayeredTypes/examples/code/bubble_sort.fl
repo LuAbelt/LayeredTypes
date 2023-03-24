@@ -1,5 +1,3 @@
-
-
 swap list idx1 idx2 {
     let tmp := get_element(list, idx1) in {
         let tmp_list := set_list_element(list, idx1, get_element(list, idx2)) in {

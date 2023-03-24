@@ -31,11 +31,6 @@ let empty_dataset := create_empty_dataset(10) in {
     let dataset := add_rows(empty_dataset, 50) in {
 
         -- This fails because we do not have enough rows
-        let row := get_row(dataset, 100) in {
-            row
-        }
-
-        -- This fails because we do not have enough rows
         let s := sample(dataset, 100) in {
             s
         }

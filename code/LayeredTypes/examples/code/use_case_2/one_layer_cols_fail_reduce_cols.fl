@@ -28,22 +28,10 @@ create_empty_dataset :: liquid :: { n:Int | (n >= 0) } -> { d:DataSet | (n_cols(
 
 -- Scenario 2: Operations with only columns
 
-let empty_dataset := create_empty_dataset(10) in {
-    let dataset := add_cols(empty_dataset, 50) in {
-        let c := extract_col(dataset, 7) in {
-            c
-        }
+let dataset := create_empty_dataset(10) in {
 
-        let c := extract_col(dataset, 10) in {
-            c
-        }
-
-        let c := reduce_cols(dataset, 5) in {
-            c
-        }
-
-        let c := reduce_cols(dataset, 100) in {
-            c
-        }
+    let c := reduce_cols(dataset, 20) in {
+        c
     }
+
 }

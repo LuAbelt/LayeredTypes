@@ -1,29 +1,51 @@
--- Use Case 2: Machine Learning Pipelines
--- We support some basic operations on data sets
--- For the running example we assume data sets are 2D matrices
+-- This is a variation of use case 2
+-- Here we will separate concerns into three different layers:
+-- 1. The row layer - operations that only depend on the number of rows
+-- 2. The column layer - operations that only depend on the number of columns
+-- 3. The row-column layer - operations that depend on both the number of rows and columns
 
 -- Get Dimensions of a Data Set
-n_rows :: liquid :: { d:DataSet | true } -> { r:Int | (r >= 0) && (r == (n_rows(d)) }
-n_cols :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c == (n_cols(d)) }
+n_rows :: rows :: { d:DataSet | true } -> { r:Int | (r >= 0) && (r == (n_rows(d)) }
+n_cols :: rows :: { d:DataSet | true } -> { c:Int | true }
+
+n_rows :: cols :: { d:DataSet | true } -> { r:Int | true }
+n_cols :: cols :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c == (n_cols(d)) }
+
+n_rows :: rowcol :: { d:DataSet | true } -> { r:Int | (r >= 0) && (r == (n_rows(d)) }
+n_cols :: rowcol :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c == (n_cols(d)) }
 
 -- Add rows or columns to a data set
-add_cols :: liquid :: { d:DataSet | true } -> {n:Int | n>0} -> { d2:DataSet | (n_cols(d2) == (n_cols(d) + n)) }
-add_rows :: liquid :: { d:DataSet | n_cols(d) > 0 } -> {n:Int | n>0} -> { d2:DataSet | (n_rows(d2) == (n_rows(d) + n)) }
+add_rows :: rows :: { d:DataSet | true } -> {n:Int | n>0} -> { d2:DataSet | (n_rows(d2) == (n_rows(d) + n)) }
+get_row :: rows :: { d:DataSet | true } -> { r:Int | (r >= 0) && (r < (n_rows(d))) } -> { d2:DataSet | (n_cols(d2) == (n_cols(d)) && (n_rows(d2)==1) ) }
+sample :: rows :: { d:DataSet | true } -> { n:Int | (n >= 0) && (n <= (n_rows(d))) } -> { d2:DataSet | (n_rows(d2) == n) }
 
-get_row :: liquid :: { d:DataSet | true } -> { r:Int | (r >= 0) && (r < (n_rows(d))) } -> { d2:DataSet | (n_cols(d2) == (n_cols(d)) && (n_rows(d2)==1) ) }
+add_rows :: cols :: { d:DataSet | n_cols(d) > 0 } -> { n:Int | true } -> { d2:DataSet | ( n_cols(d2) == n_cols(d) ) }
+get_row :: cols :: { d:DataSet | n_cols(d) > 0 } -> { r:Int | true } -> { d2:DataSet | ( n_cols(d2) == n_cols(d) ) }
+sample :: cols :: { d:DataSet | n_cols(d) > 0 } -> { n:Int | true } -> { d2:DataSet | ( n_cols(d2) == n_cols(d) ) }
+
+add_rows :: rowcol :: { d:DataSet | true } -> { n:Int | true } -> { d2:DataSet | ( n_cols(d2) == n_cols(d) ) && ( n_rows(d2) == (n_rows(d) + n) ) }
+get_row :: rowcol :: { d:DataSet | true } -> { r:Int | true } -> { d2:DataSet | ( n_cols(d2) == n_cols(d) ) && ( n_rows(d2) == 1 ) }
+sample :: rowcol :: { d:DataSet | true } -> { n:Int | true } -> { d2:DataSet | ( n_cols(d2) == n_cols(d) ) && ( n_rows(d2) == n ) }
 
 -- Perform operations that depend on the number of columns
-extract_col :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c < (n_cols(d))) } -> { d2:DataSet | (n_cols(d2) == 1) }
-reduce_cols :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c < (n_cols(d))) } -> { d2:DataSet | (n_cols(d2) == c) }
+add_cols :: cols :: { d:DataSet | true } -> {n:Int | n>0} -> { d2:DataSet | (n_cols(d2) == (n_cols(d) + n)) }
+extract_col :: cols :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c < (n_cols(d))) } -> { d2:DataSet | (n_cols(d2) == 1) }
+reduce_cols :: cols :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c < (n_cols(d))) } -> { d2:DataSet | (n_cols(d2) == c) }
 
--- Perform operations that depend on the number of rows
-sample :: liquid :: { d:DataSet | true } -> { n:Int | (n >= 0) && (n <= (n_rows(d))) } -> { d2:DataSet | (n_rows(d2) == n) }
+add_cols :: rows :: { d:DataSet | true } -> {n:Int | true } -> { d2:DataSet | (n_rows(d2) == n_rows(d) ) }
+extract_col :: rows :: { d:DataSet | true } -> { c:Int | true } -> { d2:DataSet | (n_rows(d2) == n_rows(d) ) }
+reduce_cols :: rows :: { d:DataSet | true } -> { c:Int | true } -> { d2:DataSet | (n_rows(d2) == n_rows(d) ) }
 
--- Operations that depend on both the number of rows and columns
+add_cols :: rowcol :: { d:DataSet | true } -> {n:Int | true } -> { d2:DataSet | (n_cols(d2) == (n_cols(d) + n)) && (n_rows(d2) == n_rows(d)) }
+extract_col :: rowcol :: { d:DataSet | true } -> { c:Int | true } -> { d2:DataSet | (n_cols(d2) == 1) && (n_rows(d2) == n_rows(d)) }
+reduce_cols :: rowcol :: { d:DataSet | true } -> { c:Int | true } -> { d2:DataSet | (n_cols(d2) == c) && (n_rows(d2) == n_rows(d)) }
+
 -- When training a model, we should have at least 10 rows per column
-train :: liquid :: { d:DataSet | (n_rows(d) >= 10 * (n_cols(d))) } -> { m:Model | true }
+train :: rowcols :: { d:DataSet | (n_rows(d) >= 10 * (n_cols(d))) } -> { m:Model | true }
 
-create_empty_dataset :: liquid :: { n:Int | (n >= 0) } -> { d:DataSet | (n_cols(d) == n) && (n_rows(d) == 0)}
+create_empty_dataset :: cols :: { n:Int | (n >= 0) } -> { d:DataSet | (n_cols(d) == n) }
+create_empty_dataset :: rows :: { n:Int | (n >= 0) } -> { d:DataSet | (n_rows(d) == 0) }
+create_empty_dataset :: rowcol :: { n:Int | (n >= 0) } -> { d:DataSet | (n_rows(d) == 0) && (n_cols(d) == n) }
 
 -- Scenario 1: Operations with only rows
 
