@@ -12,6 +12,7 @@ from aeon.frontend.parser import mk_parser
 from aeon.typing.context import EmptyContext, VariableBinder, TypingContext
 from aeon.typing.entailment import entailment
 from aeon.verification.sub import sub
+from aeon.verification.vcs import Conjunction
 from compiler.Exceptions import TypecheckException, WrongArgumentCountException, FeatureNotSupportedError
 from compiler.transformers.CreateAnnotatedTree import AnnotatedTree, make_annotated_tree
 
@@ -101,25 +102,96 @@ def rename_variable(context, original_name, fun_identifier, all_arg_names, remai
             remaining_args[i] = substitution_in_type(remaining_args[i], Var(free_var_name), original_name)
     return free_var_name, remaining_args
 
+def rename_in_context(context: TypingContext, original_name, new_name):
+    if not isinstance(context, VariableBinder):
+        return
+
+    if context.name == original_name:
+        context.name = new_name
+
+
+    assert isinstance(context.type, RefinedType)
+    context.type.refinement = substitution_in_liquid(context.type.refinement, LiquidVar(new_name), original_name)
+
+    rename_in_context(context.prev, original_name, new_name)
+def combine_contexts(original_context: TypingContext, additional_context: TypingContext, refined_type: RefinedType):
+    copy_context = deepcopy(additional_context)
+
+    while not isinstance(copy_context, EmptyContext):
+        assert isinstance(copy_context, VariableBinder)
+
+        original_name = copy_context.name
+        fresh_name = original_name
+
+        while original_context.type_of(fresh_name) or additional_context.type_of(fresh_name):
+
+            if original_context.type_of(fresh_name):
+                fresh_name = make_name_unique(fresh_name, original_context)
+
+            if additional_context.type_of(fresh_name):
+                fresh_name = make_name_unique(fresh_name, additional_context)
+
+        if original_name in liquid_free_vars(refined_type.refinement):
+            refined_type.refinement = substitution_in_liquid(refined_type.refinement, LiquidVar(original_name), fresh_name)
+
+        # Rename the variable in the copy context
+        rename_in_context(copy_context, original_name, fresh_name)
+
+        original_context = original_context.with_var(fresh_name, copy_context.type)
+        copy_context = copy_context.prev
+
+    return original_context
 
 class LiquidLayer(lark.visitors.Interpreter):
-    def __init__(self, layer_identifier: str= "liquid"):
+    def __init__(self, layer_identifier: str= "liquid", additional_contexts: tp.Set[str] = set()):
         self.__types = {}
         self.__fun_types = {}
         self.__ctx = EmptyContext()
         self.__layer_identifier = layer_identifier
+        self.__layer_dependencies = additional_contexts
         pass
 
     def visit(self, tree):
-        if not isinstance(tree, AnnotatedTree):
-            tree = make_annotated_tree(tree)
+        assert isinstance(tree, AnnotatedTree)
 
         return super().visit(tree)
-    def _visit_tree(self, tree):
+    def _visit_tree(self, tree: AnnotatedTree):
+        assert isinstance(tree, AnnotatedTree)
         self.__annotate(tree)
-        return super()._visit_tree(tree)
+
+        visit_result = super()._visit_tree(tree)
+
+        # Not every node returns a value
+        # Additionally blocks return a list of values
+        # These are irrelevant for the liquid layer
+        if visit_result is None or isinstance(visit_result, list):
+            return visit_result
+
+        refined_type, ctx = visit_result
+        
+        # We want to support dependencies on previous layers
+        for layer in self.__layer_dependencies:
+            other_type = tree.get_layer_annotation(layer, "liquid", "type")
+            
+            if other_type is None:
+                continue
+                
+            other_ctx = tree.get_layer_annotation(layer, "liquid", "context")
+
+            # We combine the contexts
+            ctx = combine_contexts(ctx, other_ctx, refined_type)
+
+            # In the end we combine the refined predicate with the other predicate
+            refined_type.refinement = LiquidApp("&&",[refined_type.refinement, other_type.refinement])
+        
+        # We add a layer annotation to the tree that can be used by other liquid layers
+        tree.add_layer_annotation(self.__layer_identifier, "liquid", "type", refined_type)
+        tree.add_layer_annotation(self.__layer_identifier, "liquid", "context", ctx)
+
+        return refined_type, ctx
 
     def __annotate(self, tree):
+        assert isinstance(tree, AnnotatedTree)
 
         for identifier in self.__types:
             tree.add_layer_annotation(self.__layer_identifier, identifier, "type", self.__types[identifier])
@@ -127,7 +199,7 @@ class LiquidLayer(lark.visitors.Interpreter):
         for fun_identifier in self.__fun_types:
             tree.add_layer_annotation(self.__layer_identifier, fun_identifier, "function_type", self.__fun_types[fun_identifier])
 
-        tree.add_layer_annotation(self.__layer_identifier, "contexts", "context", self.__ctx)
+        tree.add_layer_annotation(self.__layer_identifier, "liquid", "context", self.__ctx)
 
 
     def assign(self, tree: AnnotatedTree):
@@ -137,7 +209,7 @@ class LiquidLayer(lark.visitors.Interpreter):
         identifier = tree.children[0].value
 
         # Try to get the type from context if it has already been assigned
-        ctx = tree.get_layer_annotation(self.__layer_identifier, "contexts", "context")
+        ctx = tree.get_layer_annotation(self.__layer_identifier, "liquid", "context")
 
         id_type = ctx.type_of(identifier)
 
@@ -188,15 +260,15 @@ class LiquidLayer(lark.visitors.Interpreter):
 
 
     def num(self, tree):
-        return mk_parser("type").parse("{v:Int | v == "+tree.children[0].value+" }"), tree.get_layer_annotation(self.__layer_identifier, "contexts", "context")
+        return mk_parser("type").parse("{v:Int | v == "+tree.children[0].value+" }"), tree.get_layer_annotation(self.__layer_identifier, "liquid", "context")
 
     def true(self, tree):
         return mk_parser("type").parse("{v:Bool | v }")\
-            , tree.get_layer_annotation(self.__layer_identifier, "contexts", "context")
+            , tree.get_layer_annotation(self.__layer_identifier, "liquid", "context")
 
     def false(self, tree):
         return mk_parser("type").parse("{v:Bool | v }")\
-               , tree.get_layer_annotation(self.__layer_identifier, "contexts", "context")
+               , tree.get_layer_annotation(self.__layer_identifier, "liquid", "context")
 
     def bin_op(self, tree):
         op = tree.children[1].value
@@ -242,7 +314,7 @@ class LiquidLayer(lark.visitors.Interpreter):
                                               tree.meta.line,
                                               tree.meta.column)
 
-        context = tree.get_layer_annotation(self.__layer_identifier, "contexts", "context")
+        context = tree.get_layer_annotation(self.__layer_identifier, "liquid", "context")
         all_arg_names = [x.name for x in expected_arg_types]
         # Check that the types of the arguments are correct
         for i in range(actual_num_args):
@@ -352,5 +424,5 @@ class LiquidLayer(lark.visitors.Interpreter):
         self.__types = old_types
 
     def custom_expr(self, tree):
-        return t_string
+        return t_string, self.__ctx
 
