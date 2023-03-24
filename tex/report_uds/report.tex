@@ -66,7 +66,7 @@
 %%
 % Regular title as in the article class.
 %
-\title{Industry Internship -- Final Report}
+\title{Type Layers for Gradual Verification -- Industrial Internship Report}
 
 % Authors are joined by \and. Their affiliations are given by \inst, which indexes
 % into the list defined using \institute
@@ -88,7 +88,7 @@ Lukas Abelt\inst{1,2}
 
 
 
-\titlerunning{Industrial Internship Report}
+\titlerunning{Type Layers for Gradual Verification}
 
 
 \begin{document}
@@ -110,9 +110,10 @@ This seciton gives an overview of the relevant key data of persons and instituti
 	\textbf{Start of Internship:} & 01.01.2022\\
 	\textbf{End of Internship:} & 31.03.2023\\
 	\textbf{Hosting Insitution:} & LASIGE Research Unit\footnote{\url{https://www.lasige.pt/}}\newline Reliable Software Systems Research Line\newline Faculdade de Ciências da Universidade de Lisboa\\
+	\textbf{Working hours per week} & 35 \\
 	\textbf{Internship Supervisor:} & Alcides Fonseca, Assistant Professor\\
 	\textbf{Supervisor Contact Information:} & \email{amfonseca@fc.ul.pt}\\
-	\textbf{Internship Title:} & \textit{Type Layers for Gradual Verification}
+	\textbf{Internship Title:} & \textit{Type Layers for Gradual Verification}\\ 
 \end{tabularx}
 \section{Signatures}
 
@@ -155,37 +156,6 @@ We believe that this layered, incremental approach can help build more powerful 
 
 We developed a prototype for a layered verification approach called \LayeredTypes. In this prototype, programs can be written in a simple functional language that supports some primitive operations such as variables, function definitions, basic binary operations and \texttt{let} constructs. To enable the use of more complex functionality, it is also possible to define additional functions in python that can be called in this simple language. An example of a program written in that language can be seen in \Cref{lst:code_before}.
 
-The prototype consists of a simple compiler and interpreter for said functional language. The prototype has been developed in Python using the \Lark compiler framework. The core of our compiler is a \textit{layered static verifier}. Within a program, the programer can define annotations to be passed on to one or multiple verification layers. The implementation of each verification layer is provided by the programer in a separate python file with a pre-defined set of functions that will be called by the verifier. Specifically, each layer can provide the following information:
-
-\begin{itemize}
-	\item A list of all other layers that it depends on -- That is, all layers that need to be verified successfully before the layer itself is verified
-	\item A list of all layers that should be run \textit{after} this layer has been successfully verified
-	\item A \texttt{typecheck} function that gets passed the AST of the program and can perform the specific verification for the current layer.
-\end{itemize}
-
-The framework will build the dependency graph of all layers defined and used in a program and run them in a topological order so that all dependencies are satisfied. A conceptual overview of the verification framework can be seen in \Cref{fig:framework_overview}
-
-\begin{figure}[ht!]
-	\centering
-	\includegraphics[width=.8\textwidth]{framework_overview}
-	\label{fig:framework_overview}
-	\caption{Conceptual Overview of \LayeredTypes}
-\end{figure}
-
-To evaluate our work, we also implemented two different use-cases:
-
-In the first Use-Case, we developed a simple program that reads input from a file and processes it line by line. In this use-case we use three different layers. The first layer, \texttt{types} is a simple layer that is used to annotate typing information to variables and functions. The second layer, \texttt{typecheck}, depends on the first one and defines rules on how the program should be type-checked. It then uses the annotations provided by the \texttt{type} layer to check if the program is well-typed. The third layer, \texttt{state}, can be used to define, check and transistion states on variables. In our example we use it to track the state of the file descriptor and ensure that it is closed at the end of the program. The \texttt{state} layer acts independently from the other two layers.
-
-In the second Use-Case we focus on a problem currently present in implementations for \textit{Liquid Types}:
-
-\subsection{Deliverables and Publications}
-
-The full implementation of the developed prototype of \LayeredTypes will be published on GitHub\footnote{\url{https://github.com/LuAbelt/LayeredTypes}}. In addition a submission for a contributed talk was made to the TYPES2023 conference\footnote{\url{https://types2023.webs.upv.es/Index.html}} that is still pending a notification of acceptance or rejection. Additionally it is planned to potentially submit a paper to a relevant conference later in 2023.
-
-\input{acknowledgements}
-
-\bibliographystyle{plain}
-\bibliography{literature.bib}
 \begin{minipage}{0.4\linewidth}
 \begin{lstlisting}[caption={Simple example code},label={lst:code_before}]
 printLines lines idx len {
@@ -236,6 +206,53 @@ fileDescriptor :: state :: {Closed}
 \end{lstlisting}
 \end{minipage}
 
+The prototype consists of a simple compiler and interpreter for said functional language. The prototype has been developed in Python using the \Lark compiler framework. The core of our compiler is a \textit{layered static verifier}. Within a program, the programer can define annotations to be passed on to one or multiple verification layers. An example of such annotations is shown in \Cref{lst:code_after} The implementation of each verification layer is provided by the programer in a separate python file with a pre-defined set of functions that will be called by the verifier. Specifically, each layer can provide the following information:
+
+\begin{itemize}
+	\item A list of all other layers that it depends on -- That is, all layers that need to be verified successfully before the layer itself is verified
+	\item A list of all layers that should be run \textit{after} this layer has been successfully verified
+	\item A \texttt{typecheck} function that gets passed the AST of the program and can perform the specific verification for the current layer.
+\end{itemize}
+
+The framework will build the dependency graph of all layers defined and used in a program and run them in a topological order so that all dependencies are satisfied. A conceptual overview of the verification framework can be seen in \Cref{fig:framework_overview}
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[width=.8\textwidth]{framework_overview}
+	\caption{Conceptual Overview of \LayeredTypes}
+	\label{fig:framework_overview}
+\end{figure}
+
+To evaluate our work, we also implemented two different use-cases:
+
+In the first Use-Case, we developed a simple program that reads input from a file and processes it line by line. In this use-case we use three different layers. The first layer, \texttt{types} is a simple layer that is used to annotate typing information to variables and functions. The second layer, \texttt{typecheck}, depends on the first one and defines rules on how the program should be type-checked. It then uses the annotations provided by the \texttt{type} layer to check if the program is well-typed. The third layer, \texttt{state}, can be used to define, check and transistion states on variables. In our example we use it to track the state of the file descriptor and ensure that it is closed at the end of the program. The \texttt{state} layer acts independently from the other two layers.
+
+In the second Use-Case we focus on a problem currently present in implementations for \textit{Liquid Types}. When operating on liquid types, often we want to reason about orthogonal properties of variables and functions. One example could be the verification of machine learning dataset pipelines: Some operations may only depend and influence the rows (Datapoints) of a dataset (e.g. adding a datapoint does not affect the number of columns), while others only only affect the columns (Features). Finally, some actions require information on both rows and columns. For example when training a model based on a dataset, we may want to ensure that this dataset contains enough datapoints for the amount of features.
+
+In our specific running example we added a few simple functions with that specific behavior. We have several methods (Adding, removing, extracting a certain amount of elements) that only affect rows and columns separately but also a \texttt{train} method, that introduces a relationship between the number of columns and the number of rows: We assume that we need at least ten times as many datapoints as we have features.
+
+In our example we showcased the issues that arise with hard to interpret error messages that occur when typechecking fails when verifying all properties at once. Subsequently we separated the individual properties and interactions into separate layers to demonstrate how this separation affects the error messages produced.
+
+\subsection{Deliverables, Publications and Skills acquired}
+
+During the work on this internship and the subsequent implementation, the intern acquired theoretical as well as practical knowledge on the following aspects:
+\begin{itemize}
+	\item Compiler Construction
+	\item Verification Techniques
+	\item Importance and Distinction of different Type Systems including, but not limited to:
+		\begin{itemize}
+			\item Linear Types
+			\item Dependent Types
+			\item Liquid Types
+		\end{itemize}
+\end{itemize}
+
+The full implementation of the developed prototype of \LayeredTypes will be published on GitHub\footnote{\url{https://github.com/LuAbelt/LayeredTypes}}. In addition a submission for a contributed talk was made to the TYPES2023 conference\footnote{\url{https://types2023.webs.upv.es/Index.html}} that is still pending a notification of acceptance or rejection. Additionally it is planned to potentially submit a paper to a relevant conference later in 2023.
+
+\input{acknowledgements}
+
+\bibliographystyle{plain}
+\bibliography{literature.bib}
 
 \end{document}
 
