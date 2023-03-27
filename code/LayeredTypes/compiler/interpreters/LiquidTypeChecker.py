@@ -195,8 +195,10 @@ class LiquidLayer(lark.visitors.Interpreter):
             # We combine the contexts
             ctx = combine_contexts(ctx, other_ctx, refined_type)
 
+            # We rename the variables in the refinement of the other layer
+            other_refinement = substitution_in_liquid(other_type.refinement, LiquidVar(refined_type.name), other_type.name)
             # In the end we combine the refined predicate with the other predicate
-            refined_type.refinement = LiquidApp("&&",[refined_type.refinement, other_type.refinement])
+            refined_type.refinement = LiquidApp("&&",[refined_type.refinement, other_refinement])
         
         # We add a layer annotation to the tree that can be used by other liquid layers
         tree.add_layer_annotation(self.__layer_identifier, "liquid", "type", refined_type)
