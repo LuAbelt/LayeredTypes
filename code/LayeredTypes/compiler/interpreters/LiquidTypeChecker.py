@@ -117,28 +117,42 @@ def rename_in_context(context: TypingContext, original_name, new_name):
 def combine_contexts(original_context: TypingContext, additional_context: TypingContext, refined_type: RefinedType):
     copy_context = deepcopy(additional_context)
 
-    while not isinstance(copy_context, EmptyContext):
-        assert isinstance(copy_context, VariableBinder)
-
-        original_name = copy_context.name
+    def fresh_in_both(context_1: TypingContext, context_2: TypingContext):
+        original_name = context_1.name
         fresh_name = original_name
 
-        while original_context.type_of(fresh_name) or additional_context.type_of(fresh_name):
+        while context_1.type_of(fresh_name) or context_2.type_of(fresh_name):
 
-            if original_context.type_of(fresh_name):
-                fresh_name = make_name_unique(fresh_name, original_context)
+            if context_1.type_of(fresh_name):
+                fresh_name = make_name_unique(fresh_name, context_1)
 
-            if additional_context.type_of(fresh_name):
-                fresh_name = make_name_unique(fresh_name, additional_context)
+            if context_2.type_of(fresh_name):
+                fresh_name = make_name_unique(fresh_name, context_2)
 
-        if original_name in liquid_free_vars(refined_type.refinement):
-            refined_type.refinement = substitution_in_liquid(refined_type.refinement, LiquidVar(original_name), fresh_name)
+        return original_name, fresh_name
 
-        # Rename the variable in the copy context
-        rename_in_context(copy_context, original_name, fresh_name)
+    def combine_recursive(original_context: TypingContext, additional_context: TypingContext):
+        if isinstance(additional_context, EmptyContext):
+            return original_context, []
 
-        original_context = original_context.with_var(fresh_name, copy_context.type)
-        copy_context = copy_context.prev
+        # Start with the recursive call, since we want to rename the variables in the copy context
+        original_context, renamings = combine_recursive(original_context, additional_context.prev)
+
+        if isinstance(additional_context, VariableBinder):
+            original_name, fresh_name = fresh_in_both(additional_context, original_context)
+
+            additional_context.name = fresh_name
+            additional_context.type.refinement = substitution_in_liquid(additional_context.type.refinement, LiquidVar(fresh_name), original_name)
+
+            for original_name, fresh_name in renamings:
+                additional_context.type.refinement = substitution_in_liquid(additional_context.type.refinement, LiquidVar(fresh_name), original_name)
+
+            original_context = original_context.with_var(fresh_name, additional_context.type)
+            renamings.append((original_name, fresh_name))
+
+        return original_context, renamings
+
+    original_context, _ = combine_recursive(original_context, copy_context)
 
     return original_context
 
