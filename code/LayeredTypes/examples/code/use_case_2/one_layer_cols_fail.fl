@@ -3,9 +3,9 @@
 -- For the running example we assume data sets are 2D matrices
 
 -- Perform operations that depend on the number of columns
-reduce_cols :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c < (n_cols(d))) } -> { d2:DataSet | (n_cols(d2) == c) }
+reduce_cols :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c < (n_cols(d))) } -> { d2:DataSet | (n_cols(d2) == c) && (n_rows(d2) == n_rows(d)) }
 
-create_dataset :: liquid :: { c:Int | (c >= 0) } -> { d:DataSet | (n_cols(d) == c) && (n_rows(d) == r)}
+create_dataset :: liquid :: { c:Int | (c >= 0) } -> { r:Int | (r >= 0) } -> { d:DataSet | (n_cols(d) == c) && (n_rows(d) == r)}
 
 -- Scenario 2: Operations with only columns
 

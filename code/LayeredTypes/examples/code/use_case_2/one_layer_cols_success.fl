@@ -14,10 +14,11 @@ create_dataset :: liquid :: { c:Int | (c >= 0) } -> { r:Int | (r >= 0) } -> { d:
 
 dataset :: liquid :: { d:DataSet | true }
 let dataset := create_dataset(10,50) in {
+
     big_dataset :: liquid :: { d:DataSet | true }
     let big_dataset := add_cols(dataset, 100) in {
         c :: liquid :: { c:DataSet | true }
-        let c := extract_col(big_dataset, 20) in {
+        let c := reduce_cols(big_dataset, 20) in {
             c
         }
     }

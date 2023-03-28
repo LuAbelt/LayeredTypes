@@ -19,11 +19,6 @@ let empty_dataset := create_dataset(10,0) in {
     dataset :: liquid :: {d:DataSet | true }
     let dataset := add_rows(empty_dataset, 50) in {
 
-        row :: liquid :: {r:DataSet | true }
-        let row := get_row(dataset, 17) in {
-            row
-        }
-
         s :: liquid :: {s:DataSet | true }
         let s := sample(dataset, 10) in {
             s

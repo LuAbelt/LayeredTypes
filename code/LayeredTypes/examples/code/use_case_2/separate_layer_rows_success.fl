@@ -30,9 +30,9 @@ let dataset := create_dataset(10,50) in {
             sample(big_dataset, 100)
         }
 
-        small_dataset :: rows :: { d:DataSet | true }
-        small_dataset :: cols :: { d:DataSet | true }
-        small_dataset :: rowcols :: { d:DataSet | true }
+        small_sample :: rows :: { d:DataSet | true }
+        small_sample :: cols :: { d:DataSet | true }
+        small_sample :: rowcols :: { d:DataSet | true }
         let small_sample := sample(dataset, 10) in {
             small_sample
         }

@@ -4,7 +4,7 @@
 
 -- Add rows or columns to a data set
 add_rows :: liquid :: { d:DataSet | n_cols(d) > 0 } -> {n:Int | n>0} -> { d2:DataSet | (n_rows(d2) == (n_rows(d) + n)) && (n_cols(d2) == n_cols(d)) }
-reduce_cols :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c < (n_cols(d))) } -> { d2:DataSet | (n_cols(d2) == c) }
+reduce_cols :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c < (n_cols(d))) } -> { d2:DataSet | (n_cols(d2) == c) && (n_rows(d2) == n_rows(d)) }
 
 -- Operations that depend on both the number of rows and columns
 -- When training a model, we should have at least 10 rows per column
@@ -21,7 +21,7 @@ let empty_dataset := create_dataset(10,0) in {
     let dataset := add_rows(empty_dataset, 50) in {
 
        single_column :: liquid :: { d:DataSet | true }
-       let single_column := extract_col(dataset, 5) in {
+       let single_column := reduce_cols(dataset, 1) in {
            train(single_column)
        }
 
