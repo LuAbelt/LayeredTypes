@@ -91,6 +91,7 @@ let empty_dataset := create_dataset(10,0) in {
        small_dataset :: rows :: { d:DataSet | true }
        small_dataset :: cols :: { d:DataSet | true }
        small_dataset :: rowcols :: { d:DataSet | true }
+
        let small_dataset := reduce_cols(dataset, 5) in {
            train(small_dataset)
        }

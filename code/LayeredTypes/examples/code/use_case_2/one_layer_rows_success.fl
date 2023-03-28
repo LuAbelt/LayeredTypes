@@ -2,37 +2,29 @@
 -- We support some basic operations on data sets
 -- For the running example we assume data sets are 2D matrices
 
--- Get Dimensions of a Data Set
-n_rows :: liquid :: { d:DataSet | true } -> { r:Int | (r >= 0) && (r == (n_rows(d)) }
-n_cols :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c == (n_cols(d)) }
 
 -- Add rows or columns to a data set
-add_cols :: liquid :: { d:DataSet | true } -> {n:Int | n>0} -> { d2:DataSet | (n_cols(d2) == (n_cols(d) + n)) }
-add_rows :: liquid :: { d:DataSet | n_cols(d) > 0 } -> {n:Int | n>0} -> { d2:DataSet | (n_rows(d2) == (n_rows(d) + n)) }
-
-get_row :: liquid :: { d:DataSet | true } -> { r:Int | (r >= 0) && (r < (n_rows(d))) } -> { d2:DataSet | (n_cols(d2) == (n_cols(d)) && (n_rows(d2)==1) ) }
-
--- Perform operations that depend on the number of columns
-extract_col :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c < (n_cols(d))) } -> { d2:DataSet | (n_cols(d2) == 1) }
-reduce_cols :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c < (n_cols(d))) } -> { d2:DataSet | (n_cols(d2) == c) }
+add_rows :: liquid :: { d:DataSet | n_cols(d) > 0 } -> {n:Int | n>0} -> { d2:DataSet | (n_rows(d2) == (n_rows(d) + n)) && (n_cols(d2) == n_cols(d)) }
 
 -- Perform operations that depend on the number of rows
-sample :: liquid :: { d:DataSet | true } -> { n:Int | (n >= 0) && (n <= (n_rows(d))) } -> { d2:DataSet | (n_rows(d2) == n) }
+sample :: liquid :: { d:DataSet | true } -> { n:Int | (n >= 0) && (n <= (n_rows(d))) } -> { d2:DataSet | (n_rows(d2) == n) && (n_cols(d2) == n_cols(d)) }
 
--- Operations that depend on both the number of rows and columns
--- When training a model, we should have at least 10 rows per column
-train :: liquid :: { d:DataSet | (n_rows(d) >= 10 * (n_cols(d))) } -> { m:Model | true }
-
-create_empty_dataset :: liquid :: { n:Int | (n >= 0) } -> { d:DataSet | (n_cols(d) == n) && (n_rows(d) == 0)}
+create_dataset :: liquid :: { c:Int | (c >= 0) } -> { r:Int | (r >= 0) } -> { d:DataSet | (n_cols(d) == c) && (n_rows(d) == r) }
 
 -- Scenario 1: Operations with only rows
 
-let empty_dataset := create_empty_dataset(10) in {
+empty_dataset :: liquid :: {d:DataSet | true }
+let empty_dataset := create_dataset(10,0) in {
+
+    dataset :: liquid :: {d:DataSet | true }
     let dataset := add_rows(empty_dataset, 50) in {
+
+        row :: liquid :: {r:DataSet | true }
         let row := get_row(dataset, 17) in {
             row
         }
 
+        s :: liquid :: {s:DataSet | true }
         let s := sample(dataset, 10) in {
             s
         }

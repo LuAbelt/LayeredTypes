@@ -7,10 +7,6 @@
 -- sample(d,n) -- sample n rows from dataset d
 -- train(d) -- train a model on dataset d
 
--- Get Dimensions of a Data Set
-n_rows :: liquid :: { d:DataSet | true } -> { r:Int | (r >= 0) && (r == n_rows(d)) }
-n_cols :: liquid :: { d:DataSet | true } -> { c:Int | (c >= 0) && (c == n_cols(d)) }
-
 -- Add rows or columns to a data set
 add_cols :: liquid :: { d:DataSet | true } -> {n:Int | n>0} -> { d2:DataSet | (n_cols(d2) == (n_cols(d) + n)) && (n_rows(d2) == n_rows(d)) }
 add_rows :: liquid :: { d:DataSet | n_cols(d) > 0 } -> {n:Int | n>0} -> { d2:DataSet | (n_rows(d2) == (n_rows(d) + n)) && (n_cols(d2) == n_cols(d)) }
