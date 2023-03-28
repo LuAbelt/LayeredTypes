@@ -24,11 +24,16 @@ class LiquidSubtypeException(TypecheckException):
         right_type -- the right type of the subtype check
         context -- the context in which the subtype check failed
     """
-    def __init__(self, msg, type_actual, type_expected, context, line, column):
+    def __init__(self, msg, type_actual, type_expected, context: TypingContext, line, column):
         self.type_actual = type_actual
         self.type_expected = type_expected
         self.context = context
-        super().__init__(f"{msg}:\n{type_actual} is not a subtype of {type_expected} (Context: {context})", line, column)
+
+        pretty_context = ""
+        while not isinstance(context, EmptyContext):
+            pretty_context += f"{context.name} : {context.type}\n"
+            context = context.prev
+        super().__init__(f"{msg}:\n{type_actual} is not a subtype of {type_expected}\nIn Context:\n{pretty_context}", line, column)
         pass
 
 class LiquidTypeUndefinedError(TypecheckException):
@@ -114,43 +119,44 @@ def rename_in_context(context: TypingContext, original_name, new_name):
     context.type.refinement = substitution_in_liquid(context.type.refinement, LiquidVar(new_name), original_name)
 
     rename_in_context(context.prev, original_name, new_name)
+
+def fresh_in_both(context_1: TypingContext, context_2: TypingContext):
+    original_name = context_1.name
+    fresh_name = original_name
+
+    while context_1.type_of(fresh_name) or context_2.type_of(fresh_name):
+
+        if context_1.type_of(fresh_name):
+            fresh_name = make_name_unique(fresh_name, context_1)
+
+        if context_2.type_of(fresh_name):
+            fresh_name = make_name_unique(fresh_name, context_2)
+
+    return original_name, fresh_name
+
+
+def combine_recursive(rec_ctx_1: TypingContext, rec_ctx_2: TypingContext):
+    if isinstance(rec_ctx_2, EmptyContext):
+        return rec_ctx_1, []
+
+    # Start with the recursive call, since we want to rename the variables in the copy context
+    rec_ctx_1, renamings = combine_recursive(rec_ctx_1, rec_ctx_2.prev)
+
+    if isinstance(rec_ctx_2, VariableBinder):
+        original_name, fresh_name = fresh_in_both(rec_ctx_2, rec_ctx_1)
+
+        rec_ctx_2.name = fresh_name
+        rec_ctx_2.type.refinement = substitution_in_liquid(rec_ctx_2.type.refinement, LiquidVar(fresh_name), original_name)
+
+        for name, renaming in renamings:
+            rec_ctx_2.type.refinement = substitution_in_liquid(rec_ctx_2.type.refinement, LiquidVar(renaming), name)
+
+        rec_ctx_1 = rec_ctx_1.with_var(fresh_name, rec_ctx_2.type)
+        renamings.append((original_name, fresh_name))
+
+    return rec_ctx_1, renamings
 def combine_contexts(original_context: TypingContext, additional_context: TypingContext, refined_type: RefinedType):
     copy_context = deepcopy(additional_context)
-
-    def fresh_in_both(context_1: TypingContext, context_2: TypingContext):
-        original_name = context_1.name
-        fresh_name = original_name
-
-        while context_1.type_of(fresh_name) or context_2.type_of(fresh_name):
-
-            if context_1.type_of(fresh_name):
-                fresh_name = make_name_unique(fresh_name, context_1)
-
-            if context_2.type_of(fresh_name):
-                fresh_name = make_name_unique(fresh_name, context_2)
-
-        return original_name, fresh_name
-
-    def combine_recursive(original_context: TypingContext, additional_context: TypingContext):
-        if isinstance(additional_context, EmptyContext):
-            return original_context, []
-
-        # Start with the recursive call, since we want to rename the variables in the copy context
-        original_context, renamings = combine_recursive(original_context, additional_context.prev)
-
-        if isinstance(additional_context, VariableBinder):
-            original_name, fresh_name = fresh_in_both(additional_context, original_context)
-
-            additional_context.name = fresh_name
-            additional_context.type.refinement = substitution_in_liquid(additional_context.type.refinement, LiquidVar(fresh_name), original_name)
-
-            for original_name, fresh_name in renamings:
-                additional_context.type.refinement = substitution_in_liquid(additional_context.type.refinement, LiquidVar(fresh_name), original_name)
-
-            original_context = original_context.with_var(fresh_name, additional_context.type)
-            renamings.append((original_name, fresh_name))
-
-        return original_context, renamings
 
     original_context, _ = combine_recursive(original_context, copy_context)
 
@@ -202,7 +208,7 @@ class LiquidLayer(lark.visitors.Interpreter):
         
         # We add a layer annotation to the tree that can be used by other liquid layers
         tree.add_layer_annotation(self.__layer_identifier, "liquid", "type", refined_type)
-        tree.add_layer_annotation(self.__layer_identifier, "liquid", "context", ctx)
+        # tree.add_layer_annotation(self.__layer_identifier, "liquid", "context", ctx)
 
         return refined_type, ctx
 

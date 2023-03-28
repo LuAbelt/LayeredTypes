@@ -3,8 +3,8 @@ twoArgs :: cols :: { r:Int | true } -> { c:Int | c>0 } -> { d:DataSet | n_cols(d
 twoArgs :: rowcols :: { r:Int | true } -> { c:Int | true } -> { d:DataSet | true }
 
 foo :: rowcols :: { d:DataSet | n_cols(d) >= (n_rows(d)*10) }
-foo :: rows :: { d:DataSet | true }
-foo :: cols :: { d:DataSet | true }
+foo :: rows :: { drf:DataSet | true }
+foo :: cols :: { dcf:DataSet | true }
 
 let foo := twoArgs(5,100) in {
     foo

@@ -123,9 +123,14 @@ class LayeredCompiler:
                 # We mark the node as done, so we can mark all nodes that depend on it as blocked
                 topological_sorter.done(layer_id)
                 while topological_sorter.is_active():
+                    processed_one = False
                     for node in topological_sorter.get_ready():
+                        processed_one = True
                         self.layer_states[node] = LayerVerificationState.BLOCKED
                         topological_sorter.done(node)
+
+                    if not processed_one:
+                        break
 
         # All layers that are still unprocessed are blocked because they depend on a layer that is part of a cycle
         for layer_id in self.layer_states:
