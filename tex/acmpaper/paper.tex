@@ -118,8 +118,10 @@
   showspaces=false,
   keywordstyle=\bfseries\rmfamily,
   columns=flexible,
-  basicstyle=\small\sffamily,
+  basicstyle=\small\ttfamily,
   showstringspaces=false,
+  breaklines=true,
+  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
   morecomment=[l]\%,
 }
 
@@ -128,6 +130,7 @@
 
 %% CUSTOM PACKAGES - NON-ACCEPTED
 \usepackage{todonotes}
+\usepackage{cleveref}
 
 \makeatletter
 \def\input@path{{../chapters}}

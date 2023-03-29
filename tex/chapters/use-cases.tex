@@ -1,3 +1,4 @@
+%! TEX root = ../acmpaper/paper.tex
 \section{Example Use-Cases}
 \label{ssec:use_cases}
 For the scope of this paper, we have developed two exemplary use-cases for our framework that demonstrates our layered verification approach. In the first use-case, we defined a simple program that uses multiple different, partly independent type systems. For our second example, we use our framework to present a more flexible approach to using Liquid Types.
@@ -264,3 +265,97 @@ One shortcoming of our implementation is that we require that the \textit{Types}
 \subsection{Use Case 2 -- Liquid Types}
 \label{sssec:use_case_2}
 
+In our second use-case we use a scenario where we verify different properties of a program based on liquid types. Specifically, we show how our approach can be used to improve the verification of orthogonal properties.
+
+\subsubsection{Description}
+\label{sssec:uc2_description}
+
+Liquid Types can be particulary useful when operating with machine learning pipelines: Learning datasets usually contain many dimensions that can often be manipulated independently from one another. In its' simplest form, a dataset can be compared to a two-dimensional table where we can add and remove rows or columns independently from one another. However some operations may require interaction of these two dimensions. For example, in our two dimensional running example we could consider each column a specific feature and each row a specific datapoint. If we now want to train a model based on a specific dataset, we might want to ensure that we have enough datapoints in relation to the number of features we observe.
+
+For our example use-case we model some basic operations that might be used in a machine learning environment to create and modify datasets. Specifically, we will support the following operations:
+\begin{itemize}
+	\item \texttt{createDataset(c,r)} -- Creates a dataset with a specific number of rows and columns
+	\item \texttt{add\_rows(d,n)} -- Adds a specific number of rows to a dataset
+	\item \texttt{add\_cols(d,n)} -- Adds a specific number of columns to a dataset
+	\item \texttt{reduce\_cols(d,n)} -- Reduces a datset to a specific number of columns
+	\item \texttt{sample(d,n)} -- Samples a specific number of datapoints from a dataset
+	\item \texttt{train(d)} -- Trains a model based on a specified dataset
+\end{itemize}
+
+From the operations above, it is already clear that these operations will affect rows and columns of a dataset. Sometimes independently from one another, but some operations will also require or provide information about both of them. We will describe these changes in dimensions using liquid types. Under the assumption that the in-built function \texttt{n\_rows(d)} and \texttt{n\_cols(d)} return the number of rows and columns of a dataset respectively, these function have the following liquid signatures:
+
+\begin{lstlisting}[numbers=none,tabsize=8,caption={Liquid Signatures of functions in Use-Case 2}]
+createDataset :: { c:Int | (c >= 0) }
+	-> { r:Int | (r >= 0) }
+	-> { d:DataSet | (n_cols(d) == c) && (n_rows(d) == r) }
+
+add_rows :: { d:DataSet | n_cols(d) > 0 }
+	-> {n:Int | n>0} 
+	-> { d2:DataSet | (n_rows(d2) == (n_rows(d) + n)) && (n_cols(d2) == n_cols(d)) }
+
+add_cols :: { d:DataSet | true } 
+	-> { n:Int | n>0 }
+	-> { d2:DataSet | (n_cols(d2) == (n_cols(d) + n)) && (n_rows(d2) == n_rows(d)) }
+
+reduce_cols :: { d:DataSet | true } 
+	-> { c:Int | (c >= 0) && (c < (n_cols(d))) }
+	-> { d2:DataSet | (n_cols(d2) == c) && (n_rows(d2) == n_rows(d)) }
+
+sample :: { d:DataSet | true } 
+	-> { n:Int | (n >= 0) && (n <= (n_rows(d))) } 
+	-> { d2:DataSet | (n_rows(d2) == n) && (n_cols(d2) == n_cols(d)) }
+
+train :: { d:DataSet | (n_rows(d) >= 10 * (n_cols(d))) } -> { m:Model | true }
+\end{lstlisting}
+
+When inspecting the liquid signatures above, we notice that only in |train| the number of rows directly interacts with the number of columns. For all other functions these two properties are orthogonal to each other. Current liquid type implementations are limited to this combined verification of these properties for all cases. However in \Cref{sssec:uc2_comparison} we will showcase the challenges of this approach and how our implementation can lift this limitation.
+
+For our use-case we will look at three individual code snippets: One that only uses operations that manipulate the rows of a dataset, one that only manipulates columns and one that depends on both dimensions by using \texttt{train}. The three code snippets are show in \Cref{lst:uc2_code1,lst:uc2_code2,lst:uc2_code3}. A more in-depth explanation of the exmaples will follow in \Cref{sssec:uc2_comparison}.
+
+\begin{minipage}{.45\textwidth}
+\begin{lstlisting}[caption={Code example that only manipulates rows},label={lst:uc2_code1}]
+let empty := create_dataset(10,0) in {
+    let d := add_rows(empty, 50) in {
+        sample(d, 10)
+    }
+}
+\end{lstlisting}
+\end{minipage}\hfill%
+\begin{minipage}{.45\textwidth}
+\begin{lstlisting}[caption={Code example that only manipulates columns},label={lst:uc2_code2}]
+let d := create_dataset(10,50) in {
+    let d2 := add_cols(d, 100) in {
+        reduce_cols(d2, 20)
+    }
+}
+\end{lstlisting}	
+\end{minipage}
+
+\begin{center}
+\begin{minipage}{0.5\textwidth}
+\begin{lstlisting}[caption={Caption that uses both rows and columns},label={lst:uc2_code3}]
+let empty_d := create_dataset(10,0) in {
+    let d := add_rows(empty_d, 50) in {
+       let column := reduce_cols(d, 1) in {
+           train(column)
+       }
+
+       let small_d := reduce_cols(d, 5) in {
+           train(small_d)
+       }
+    }
+}		
+\end{lstlisting}
+\end{minipage}
+\end{center}
+\subsubsection{Implementation Details}
+\label{sssec:uc2_implementation}
+
+\subsubsection{Comparison of monolithic to independent layers}
+\label{sssec:uc2_comparison}
+
+\subsubsection{Discussion}
+\label{sssec:uc2_discussion}
+
+\subsubsection{Limitations}
+\label{sssec:uc2_limitations}
