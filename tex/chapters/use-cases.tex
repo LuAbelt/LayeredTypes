@@ -284,7 +284,7 @@ For our example use-case we model some basic operations that might be used in a 
 
 From the operations above, it is already clear that these operations will affect rows and columns of a dataset. Sometimes independently from one another, but some operations will also require or provide information about both of them. We will describe these changes in dimensions using liquid types. Under the assumption that the in-built function \texttt{n\_rows(d)} and \texttt{n\_cols(d)} return the number of rows and columns of a dataset respectively, these function have the following liquid signatures:
 
-\begin{lstlisting}[numbers=none,tabsize=8,caption={Liquid Signatures of functions in Use-Case 2}]
+\begin{lstlisting}[numbers=none,tabsize=8,caption={Liquid Signatures of functions in Use-Case 2},label={lst:uc2_liq_sig}]
 createDataset :: { c:Int | (c >= 0) }
 	-> { r:Int | (r >= 0) }
 	-> { d:DataSet | (n_cols(d) == c) && (n_rows(d) == r) }
@@ -351,6 +351,35 @@ let empty_d := create_dataset(10,0) in {
 \subsubsection{Implementation Details}
 \label{sssec:uc2_implementation}
 
+Similar to the layers implemented for Use-Case 1, we implemented the verification layers based on the interpreter classes provided by \Lark. However, there is a slight difference: While the layers in our previous use-case had a static, predefined name, our liquid layer uses a more generic approach where the user can choose the layer name. This was an explicit design decision as it makes it easy to re-use the same liquid verification implementation to verify different liquid properties independently (See \Cref{sssec:uc2_comparison}).
+
+As a basis for the liquid type checking we use our own fork of the \textsc{Aeon} language \footnote{See \url{https://github.com/LuAbelt/aeon-lt/tree/aeon-lt}}. Therefore, we use the same type definitions for liquid types as \textsc{Aeon} does. An example of this annotation style (excluding the layer identifier) can be seen in \Cref{lst:uc2_liq_sig}. It is possible to annotate both variable identifiers and function calls in our liquid layer. In a program, the verifier will perform a liquid type check for two specific scenarios:
+\begin{itemize}
+	\item When assigning an expression to a variable as part of a \texttt{let} statement
+	\item When passing an expression as an argument to a function call
+\end{itemize}
+
+Consider the following example:
+
+\begin{lstlisting}[caption={Simple example code of a liquid layer},label={lst:uc2_simple_example}]
+var :: liquid :: { v:Int | v>0 }
+fun :: liquid :: { arg:Int | arg>5 } -> {ret:Int | ret>=arg }
+
+let var := fun(10) in {
+	var
+}
+\end{lstlisting}
+
+In this example two liquid type checks happen. First, it is checked, whether the integer literal \texttt{10} is a subtype of the defined type for the first argument of the function \texttt{fun}, which requires an argument greater than $5$. Internally, \textsc{Aeon} performs this typecheck by employing the constraint solver \textsc{Z3}, which effectively checks the following:
+
+$$\forall v:Int | (v==10)\implies(v>5)$$
+
+Since in liquid types, there can be cross-references to previously defined variables, to be able to verify this properly our layer also builds a \textit{typing context}(For brevity simply referred to as context from here on). This context contains the specific types for all previously defined and potentially referenced identifiers. This context will be extended by each \texttt{let} and each function call that is verified.
+
+One thing to note about the context is, that when our liquid verification layer adds types to it, it will always add the most specific type that is known. For example, in the code snippet above, within the body of the \texttt{let} statement, we know that \texttt{var} will always be greater than $10$, even though purely by the liquid signature of \texttt{fun} we would only know that it always has to be greater than $5$. However, by adding the specific type of the argument passed to \texttt{fun} to the context we have a more precise information available.
+
+The current context as well as resulting type of a node is also attached as additional meta-information to the AST. With this, our liquid layer implementation allows a novel technique that differentiates it from current implementations available: With this we can not only verify liquid properties independently from one another, but also allow later liquid layers to use type information provided by a previous liquid layer to be taken into account when type checking a joint layer. One usage of this will be shown in \Cref{sssec:uc2_comparison}. To allow this interaction with other liquid layers, the user simply provides a set of layer identifiers that will then be queried for additional type and context information.
+
 \subsubsection{Comparison of monolithic to independent layers}
 \label{sssec:uc2_comparison}
 
@@ -359,3 +388,15 @@ let empty_d := create_dataset(10,0) in {
 
 \subsubsection{Limitations}
 \label{sssec:uc2_limitations}
+- Divide into conceptual and technical limitations
+
+- Conceptual:
+	- User needs to properly divide properties
+	
+- Technical
+	- Scalability: Context can grow fast (Could be fixed)
+	- Function Defs are not checked against defined return type (Could be fixed)
+	- All identifies/functions needs to be annotated even if layer does not add/need information
+	(Might be fixable?)
+	- Also irrelevant vars are added to context
+	- No "normal" assign
