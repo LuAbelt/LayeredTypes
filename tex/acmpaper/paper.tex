@@ -27,13 +27,7 @@
 %% for your publication.
 %%
 %%
-\documentclass[acmsmall, review, screen]{acmart}
-
-%%
-%% \BibTeX command to typeset BibTeX logo in the docs
-\AtBeginDocument{%
-  \providecommand\BibTeX{{%
-    Bib\TeX}}}
+\documentclass[acmsmall, review, screen,natbib=false]{acmart}
 
 %% Rights management information.  This information is sent to you
 %% when you complete the rights form.  These commands have SAMPLE
@@ -136,8 +130,13 @@
 \def\input@path{{../chapters}}
 \makeatother
 
+\RequirePackage[
+  datamodel=acmdatamodel,
+  style=acmauthoryear,
+  ]{biblatex}
 
-%%
+  \addbibresource{../literature.bib}
+  %%
 %% end of the preamble, start of the body of the document source.
 \begin{document}
 
@@ -215,6 +214,9 @@
 \input{conclusion}
 
 \input{acknowledgements}
+
+\printbibliography
+
 \end{document}
 \endinput
 %%

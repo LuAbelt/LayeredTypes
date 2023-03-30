@@ -383,20 +383,156 @@ The current context as well as resulting type of a node is also attached as addi
 \subsubsection{Comparison of monolithic to independent layers}
 \label{sssec:uc2_comparison}
 
-\subsubsection{Discussion}
+In the previously described examples, all the code presented was valid and consistent with the liquid signatures we described earlier. Thus, verifying them all within the same verification pass does not bear any issues. An examples of slightly adapted versions of the code are shown in \Cref{lst:uc2_code1_fail,lst:uc2_code2_fail,lst:uc2_code3_fail} that would lead to the verification errors shown in \Cref{lst:uc2_errors_monolithic}. For this simple code, even without profound domain knowledge it is relatively easy to spot that the errors are caused by the rows or columns respectively. The only error that might be slightly harder to interpret is the error caused by \texttt{train} since it is caused by an interaction of the two properties.
+
+\begin{minipage}{.45\textwidth}
+\begin{lstlisting}[caption={Adapted version of \Cref{lst:uc2_code1}},label={lst:uc2_code1_fail}]
+let empty := create_dataset(10,0) in {
+    let d := add_rows(empty, 50) in {
+        sample(d, 100)
+    }
+}
+\end{lstlisting}
+\end{minipage}\hfill%
+\begin{minipage}{.45\textwidth}
+\begin{lstlisting}[caption={Adapted version of \Cref{lst:uc2_code2}},label={lst:uc2_code2_fail}]
+let d := create_dataset(10,50) in {
+    reduce_cols(d, 20)
+}
+\end{lstlisting}	
+\end{minipage}
+
+\begin{center}
+\begin{minipage}{0.5\textwidth}
+\begin{lstlisting}[caption={Adapted version of \Cref{lst:uc2_code3}},label={lst:uc2_code3_fail}]
+let empty_d := create_dataset(10,0) in {
+    let d := add_rows(empty_d, 50) in {
+       train(d)
+    }
+}
+\end{lstlisting}
+\end{minipage}
+\end{center}
+
+\begin{lstlisting}[caption={Error messages when using one monolithic liquid layer},label={lst:uc2_errors_monolithic},numbers=none]
+-- Error in sample:
+Layer 'liquid' failed with error: Error in function call to sample, argument 2:
+{ v:Int | (v == 100) } is not a subtype of { n:Int | ((n >= 0) && (n <= n_rows(sample_d))) }
+[...]
+
+-- Error in reduce_cols:
+Layer 'liquid' failed with error: Error in function call to reduce_cols, argument 2:
+{ v:Int | (v == 20) } is not a subtype of { c:Int | ((c >= 0) && (c < n_cols(reduce_cols_d))) }
+[...]
+
+-- Error in train:
+Layer 'liquid' failed with error: Error in function call to train, argument 1:
+{ d2:DataSet | ((n_rows(d2) == (n_rows(add_rows_d) + add_rows_n)) && (n_cols(d2) == n_cols(add_rows_d))) } is not a subtype of { d:DataSet | (n_rows(d) >= (10 * n_cols(d))) }
+[...]
+\end{lstlisting}
+
+However, there are also very basic examples, where such a distinction is not easily possible anymore. Consider the following example, where we have a dataset stored in a variable on which we want to both ensure a certain number of rows and a number of columns:
+
+\begin{lstlisting}[caption={Small example of a dataset imposing restrictions on both rows and dimensions},label={lst:uc2_fail_monolithic}]
+d :: liquid :: { d:DataSet | (n_rows(d)>100) && (n_cols(d)>10)}
+
+let d := createDataset(10,1000) in {
+	d
+}
+\end{lstlisting}
+
+In this example, the programmer might have overlooked that the amount of columns needs to be greater than $10$. The resulting verification error is shown in \Cref{lst:uc2_error_mono}. For the developer, it is not directly evident that the error is caused by an issue with the number of rows. Only after careful inspection of the exact error and verification context, it is possible for the developer to properly identify this. 
+
+\begin{lstlisting}[caption={Verification error produced by \Cref{lst:uc2_fail_monolithic}}]
+Layer 'liquid' failed with error: Error during assigning identifier 'd' in let statement:
+{ d:DataSet | ((n_cols(d) == create_dataset_c) && (n_rows(d) == create_dataset_r)) } is not a subtype of { d:DataSet | ((n_rows(d) > 100) && (n_cols(d) > 10)) }
+In Context:
+create_dataset_r : { v:Int | (v == 1000) }
+create_dataset_c : { v:Int | (v == 10) }
+(line 3)
+\end{lstlisting}
+
+Our implementation allows us to separate these individual checks into different verification passes. For the running example, we will consider three separate layers:
+
+\begin{enumerate}
+	\item \texttt{rows} -- This layer is only verifies all information that is only relevant to the number of rows of a dataset
+	\item \texttt{cols} -- This layer only verifies information only relevant to the number of columns of a dataset
+	\item \texttt{rowcols} -- This is a layer that verifies all \textit{interactions} between rows and columns of a dataset. It depends on the previous two layers and re-uses their contexts
+\end{enumerate}
+
+With this approach, each function and identifier will get three separate layer annotations, one for each respective layer. An example of how these annotations look for \texttt{create\_dataset} and \texttt{train} are shown in \Cref{lst:uc2_separate_liq_sigs}\footnote{For brevity, we omitted further examples for the other methods. However, they can be found in our GitHub repository}.
+
+\begin{lstlisting}[numbers=none,caption={Liquid signatures for separate layers},label={lst:uc2_separate_liq_sigs},tabsize=4]
+-- Only define requirements and effect on rows
+create_dataset :: rows :: { c:Int | true } -> { r:Int | (r >= 0) } 
+			-> { d:DataSet | (n_rows(d) == r) }
+
+-- Only define requirements and effect on columns
+create_dataset :: cols :: { c:Int | (c >=0) } -> { r:Int | true } 
+			-> { d:DataSet | (n_cols(d) == c) }
+
+-- No interaction between layers
+create_dataset :: rowcols :: { c:Int | true } -> { r:Int | true } 
+			-> { d:DataSet | true }
+
+-- train does not have properties that only affect rows or column independently
+train :: rows :: { d:DataSet | true } -> { m:Model | true }
+train :: cols :: { d:DataSet | true } -> { m:Model | true }
+-- Check the interaction
+train :: rowcols :: { d:DataSet | (n_rows(d) >= 10*(n_cols(d))) } -> { m:Model | true }
+\end{lstlisting}
+
+Similarly, the example from \Cref{lst:uc2_fail_monolithic} slightly changes to the code shown in \Cref{lst:uc2_fail_separate}. With this new approach the verifier output changes as shown in \Cref{lst:uc2_error_separate}. It now provides with a much more accurate information from which we know, that all properties related to the number of rows could be verified but there was an error during verifying the \texttt{cols} layer. Subsequently, the \texttt{rowcols} layer is blocked for verification. Additionally we get a more concise error message for the verification error than we had when only using one monolithic layer.
+\begin{lstlisting}[caption={Adapted version of \Cref{lst:uc2_fail_monolithic} that uses separate layers},label={lst:uc2_fail_separate}]
+d :: rows :: { d:DataSet | (n_rows(d)>100)}
+d :: cols :: { d:DataSet | (n_cols(d)>10)}
+d :: liquid :: {d:DataSet | true }
+
+let d := createDataset(10,1000) in {
+	d
+}
+\end{lstlisting}
+\begin{lstlisting}[caption={Verifier output produced by \Cref{lst:uc2_fail_separate}},label=lst:uc2_error_separate,numbers=none]
+Not all layers could be verified.
+The following layers were processed:
+	rows: SUCCESS
+	cols: FAILURE
+	rowcols: BLOCKED
+
+
+The following layers failed during typechecking:
+	cols:
+	 Layer 'cols' failed with error: 20:1: Error during assigning identifier 'd' in let statement:
+{ d:DataSet | (n_cols(d) == create_dataset_c) } is not a subtype of { d:DataSet | (n_cols(d) > 10) }
+In Context:
+create_dataset_r : { v:Int | (v == 1000) }
+create_dataset_c : { v:Int | (v == 10) }
+\end{lstlisting}
+
+Due to the spearation we now have much more detailled information on what exactly causes the liquid error. For a programmer this can make it much simpler to debug programs and fix liquid errors.
+
+\subsubsection{Discussion and Limitations}
 \label{sssec:uc2_discussion}
 
-\subsubsection{Limitations}
-\label{sssec:uc2_limitations}
-- Divide into conceptual and technical limitations
+In this second use-case, we have successfully shown:
+\begin{itemize}
+	\item That our approach can be used to verify liquid types in general by providing a general liquid verification layer
+	\item Furthermore we provided a small demonstration how the same implementation can be used to separate different concerns of liquid types into separate independent verification passes
+	\item Lastly our implementation enables the re-use of type information provided by a liquid layer previously verified.
+\end{itemize}
 
-- Conceptual:
-	- User needs to properly divide properties
-	
-- Technical
-	- Scalability: Context can grow fast (Could be fixed)
-	- Function Defs are not checked against defined return type (Could be fixed)
-	- All identifies/functions needs to be annotated even if layer does not add/need information
-	(Might be fixable?)
-	- Also irrelevant vars are added to context
-	- No "normal" assign
+Especially for the separation of concerns we believe that this presents a novelty in the domain of liquid types as we are not aware of similar work in this field. However, we also have to discuss certain limitations that our implementation and approach may exhibit. We divide this limitations into conceptual and technical limitations.
+
+\paragraph{Conceptual Limitations} -- While the separation of concerns for liquid properties presents a powerful mechanism, it also exposes a certain risk. When separating the concerns, the developer needs to have a clear understanding if and how properties of the affected functions and variables may affect each other or interact with one another. Meaning that the developer performing the separation into the different layers requires a profound domain knowledge of the system to be verified.
+
+If this separation does not performed properly this could lead to undesired side effects. One example of of an unproper separation could happen when a developer decides to separate two properties in the assumption that they are independent if in reality they are not. In that case the two properties might lead to a valid program when verified independently drom one another, but when verified in conjunction one might realize that there are flaws in the system. Another example are properties that contradict each other.
+
+This issue is related to correctly identifying the dependencies and interactions between properties. For a sufficient large software systems it might not be trivial to identify the dependencies and interactions between different parts of the system. Similar findings have been made in the domain of Software-Product Line Engineering when identifying interactions between features\cite{apel2013}.
+
+\paragraph{Technical Limitations} Our prototype exhibits some technical limitations that might reduce the applicability of our implementation on bigger systems. First and foremost, since we limit ourselves to the small example language that we designed ourselves, using it on real-world examples would require and considerable amount of work to develop a proper wrapper with our language and the built-in python integration.
+
+Additionally, our prototype only allows to bind variables for a specific scope via the \texttt{let} statement. Reassigning an existing variable to a new value is not possible. Additionally, all the identifiers and functions need to be fully annotated even if the specific layer does not require or add any new information about them (As seen in for example \texttt{train} for the layers \texttt{rows} and \texttt{cols} in \Cref{lst:uc2_separate_liq_sigs}). However, we believe that this design decision is a more safer one than allowing unannotated identifiers that are simply not verified, as it adds an additional level of explicitness to the verification process. However, with many layers this leads to a considerable amount of additional boilerplate code that might be required.
+
+Lastly, our implementation currently also might suffer from a general scalability issue, when using the feature to consider additional contexts during verification. During verification the current context is merged with all the dependent contexts. This merged context is then also used for the further verification steps. However the next time this new context is merged again with the dependent contexts, there is no mechanism in place that checks whether the variables from the additional contexts have already been merged. This leads to multiple independent copies of the same variables (With varying names) existing in the context.
+
+This shortcoming of our implementation however could be fixed with little implementation effort. One simply needs to keep track which variables have already been added to the context previously and what they might have been renamed to. When then merging the contexts a second time, already existing variables would simply be skipped. However, due to limited time this feature is not yet present in our prototype.
