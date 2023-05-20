@@ -1,0 +1,14 @@
+{
+    "python.testing.pytestArgs": [
+        "--typeguard-packages=aeon tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.formatting.provider": "black",
+    "python.linting.mypyEnabled": true,
+    "python.linting.enabled": true,
+    "files.watcherExclude": {
+        "**/target": true
+    }
+}
