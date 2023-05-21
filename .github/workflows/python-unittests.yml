@@ -3,8 +3,6 @@ name: Python Library UnitTests
 on:
   push:
     paths:
-      - 'code/LayeredTypes/**'
-      - '.github/workflows/python-unittests.yml'
 
 jobs:
   test:
@@ -26,6 +24,3 @@ jobs:
           pip install pytest
           python -m pytest tests/ 
 
-defaults:
-  run:
-    working-directory: code/LayeredTypes
