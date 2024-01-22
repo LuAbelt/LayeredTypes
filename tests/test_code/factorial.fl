@@ -8,6 +8,7 @@ fac x {
     }
 }
 
-print(fac(4))
+x := fac(47)
+print(x)
 
-test(42)
+x

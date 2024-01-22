@@ -1,11 +1,11 @@
-twoArgs :: rows :: { r:Int | r>0 } -> { c:Int | true } -> { d:DataSet | n_rows(d)==r }
-twoArgs :: cols :: { r:Int | true } -> { c:Int | c>0 } -> { d:DataSet | n_cols(d)==c }
-twoArgs :: rowcols :: { r:Int | true } -> { c:Int | true } -> { d:DataSet | true }
+create :: rows :: { r:Int | r>0 } -> { c:Int | true } -> { d:DataSet | n_rows(d)==r }
+create :: cols :: { r:Int | true } -> { c:Int | c>0 } -> { d:DataSet | n_cols(d)==c }
+create :: dims :: { r:Int | true } -> { c:Int | true } -> { d:DataSet | true }
 
-foo :: rowcols :: { d:DataSet | n_cols(d) >= (n_rows(d)*10) }
-foo :: rows :: { drf:DataSet | true }
-foo :: cols :: { dcf:DataSet | true }
+data :: dims :: { d:DataSet | n_cols(d) >= (n_rows(d)*10) }
+data :: rows :: { drf:DataSet | true }
+data :: cols :: { dcf:DataSet | true }
 
-let foo := twoArgs(5,100) in {
-    foo
+let data := create(5,10) in {
+    data
 }

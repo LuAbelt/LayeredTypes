@@ -1,4 +1,4 @@
--- Use Case 2: Machine Learning Pipelines
+a-- Use Case 2: Machine Learning Pipelines
 -- For simplicity, we limit ourselves to the following operations:
 -- createDataset(c,r) -- create a dataset with r rows and c columns
 -- add_rows(d,n) -- add n rows to dataset d

@@ -16,6 +16,9 @@ def emptyCall():
 def twoArgs(first, second):
     return [first , second]
 
+def create(r,c):
+    return [r,c]
+
 def threeArgs(first, second, third):
     return [first, second, third]
 
